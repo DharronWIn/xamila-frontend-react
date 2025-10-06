@@ -8,7 +8,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    allowedHosts: ["*"], // ✅ Autorise tous les domaines
+    allowedHosts: [
+      "xamila-frontend-react.onrender.com",
+      "localhost", 
+    ],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
