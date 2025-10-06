@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Fintech Color Palette - Financial Green & Trust Blue */
+    --background: 0 0% 99%;
+    --foreground: 210 15% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 15% 15%;
+
+    /* Primary - Financial Green */
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 142 65% 45%;
+    --primary-dark: 142 85% 28%;
+
+    /* Secondary - Trust Blue */
+    --secondary: 213 100% 96%;
+    --secondary-foreground: 213 85% 25%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    /* Accent - Trust Blue */
+    --accent: 213 85% 55%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 213 75% 65%;
+    --accent-dark: 213 95% 45%;
+
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 31% 91%;
+    --input: 214 31% 91%;
+    --ring: 142 76% 36%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 65% 45%));
+    --gradient-accent: linear-gradient(135deg, hsl(213 85% 55%), hsl(213 75% 65%));
+    --gradient-hero: linear-gradient(135deg, hsl(142 76% 36%) 0%, hsl(213 85% 55%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 85% 28%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
+    
+    /* Glass morphism */
+    --glass-bg: hsla(0, 0%, 100%, 0.25);
+    --glass-border: hsla(255, 255%, 255%, 0.18);
+    --glass-shadow: 0 8px 32px 0 hsla(31, 38%, 56%, 0.15);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-glow: 0 0 40px hsl(142 76% 36% / 0.3);
+    --shadow-accent: 0 0 40px hsl(213 85% 55% / 0.3);
+
+    /* Sidebar colors */
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 210 15% 25%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 210 15% 25%;
+    --sidebar-border: 214 31% 91%;
+    --sidebar-ring: 142 76% 36%;
+
+    /* Animation durations */
+    --duration-fast: 0.15s;
+    --duration-normal: 0.3s;
+    --duration-slow: 0.5s;
+
+    /* Transitions */
+    --transition-smooth: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all var(--duration-normal) cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
+    --background: 220 13% 9%;
+    --foreground: 220 13% 95%;
+
+    --card: 220 13% 11%;
+    --card-foreground: 220 13% 95%;
+
+    --popover: 220 13% 11%;
+    --popover-foreground: 220 13% 95%;
+
+    --primary: 235 86% 65%;
+    --primary-foreground: 220 13% 9%;
+    --primary-light: 235 80% 70%;
+    --primary-dark: 235 90% 60%;
+
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 220 13% 95%;
+
+    --muted: 220 13% 15%;
+    --muted-foreground: 220 13% 70%;
+
+    --accent: 235 86% 65%;
+    --accent-foreground: 220 13% 9%;
+    --accent-light: 235 80% 70%;
+    --accent-dark: 235 90% 60%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 20%;
+    --input: 220 13% 20%;
+    --ring: 235 86% 65%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(235 86% 65%), hsl(235 80% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(235 86% 65%), hsl(235 80% 70%));
+    --gradient-hero: linear-gradient(135deg, hsl(235 86% 65%) 0%, hsl(220 13% 20%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 13% 11%) 0%, hsl(220 13% 13%) 100%);
+
+    --glass-bg: hsla(220, 13%, 11%, 0.4);
+    --glass-border: hsla(220, 13%, 20%, 0.3);
+
+    --sidebar-background: 220 13% 9%;
+    --sidebar-foreground: 220 13% 90%;
+    --sidebar-primary: 235 86% 65%;
+    --sidebar-primary-foreground: 220 13% 9%;
+    --sidebar-accent: 220 13% 15%;
+    --sidebar-accent-foreground: 220 13% 90%;
+    --sidebar-border: 220 13% 20%;
+    --sidebar-ring: 235 86% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Styles pour la sidebar - onglet actif */
+  .sidebar-active-tab {
+    @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm border-l-2 border-primary;
+  }
+
+  .sidebar-hover-tab {
+    @apply hover:bg-sidebar-accent/50 text-sidebar-foreground hover:text-sidebar-accent-foreground transition-colors duration-200;
+  }
+
+  /* Améliorations pour le mode sombre */
+  .dark {
+    /* Améliorer le contraste des textes */
+    .text-muted-foreground {
+      @apply text-muted-foreground/80;
+    }
+    
+    /* Améliorer les cartes */
+    .bg-card {
+      @apply shadow-lg shadow-black/20;
+    }
+    
+    /* Améliorer les boutons */
+    .bg-primary {
+      @apply shadow-lg shadow-primary/25;
+    }
+    
+    /* Améliorer les bordures */
+    .border {
+      @apply border-border/50;
+    }
+    
+    /* Améliorer les inputs */
+    .bg-background {
+      @apply shadow-inner;
+    }
+    
+    /* Améliorer les hover states */
+    .hover\:bg-accent:hover {
+      @apply bg-accent/80;
+    }
+    
+    /* Améliorer les focus states */
+    .focus-visible\:ring-ring:focus-visible {
+      @apply ring-primary/50;
+    }
+  }
+
+  /* Améliorations générales pour tous les thèmes */
+  .bg-primary {
+    @apply shadow-sm;
+  }
+  
+  .bg-card {
+    @apply shadow-sm;
+  }
+  
+  .border {
+    @apply border-border/60;
+  }
+}
