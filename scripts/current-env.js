@@ -38,7 +38,7 @@ const environments = {
   },
   production: {
     name: 'Challenge Épargne (Production)',
-    apiUrl: process.env.VITE_API_URL_PROD || 'https://api.centralapis.com/api/v1',
+    apiUrl: process.env.VITE_API_URL_PROD || 'https://xamila-app-backend-nestjs.onrender.com/api',
     version: process.env.VITE_APP_VERSION || '1.0.0',
     debug: process.env.VITE_DEBUG === 'true' || process.env.VITE_DEBUG === true || false,
   },

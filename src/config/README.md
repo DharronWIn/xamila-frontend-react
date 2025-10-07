@@ -20,7 +20,7 @@ Ce fichier contient :
 export const environments = {
   development: {
     name: 'AY E-CAMPUS (Dev)',
-    apiUrl: 'https://api.centralapis.com/api/v1',
+    apiUrl: 'https://xamila-app-backend-nestjs.onrender.com/api',
     version: '1.0.0',
     debug: true,
   },

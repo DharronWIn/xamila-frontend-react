@@ -26,7 +26,7 @@ function getApiUrl(env: Environment): string {
   const defaultUrls = {
     development: 'http://localhost:3007/api',
     preproduction: 'https://preprod-api.ay-ecampus.com/api',
-    production: 'https://api.centralapis.com/api/v1',
+    production: 'https://xamila-app-backend-nestjs.onrender.com/api',
   };
   
   console.log(`⚠️ Variable ${envVar} non trouvée, utilisation de l'URL par défaut: ${defaultUrls[env]}`);
