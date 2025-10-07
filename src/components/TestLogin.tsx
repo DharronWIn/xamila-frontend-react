@@ -72,43 +72,4 @@ export function TestLogin() {
       </Card>
     );
   }
-
-  return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Test de connexion</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Button 
-          onClick={handleTestLogin} 
-          disabled={isLoggingIn}
-          className="w-full"
-        >
-          {isLoggingIn && loginType === 'user' ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Connexion en cours...
-            </>
-          ) : (
-            "Se connecter (Utilisateur)"
-          )}
-        </Button>
-        <Button 
-          onClick={handleTestAdminLogin} 
-          disabled={isLoggingIn}
-          variant="outline" 
-          className="w-full"
-        >
-          {isLoggingIn && loginType === 'admin' ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Connexion admin en cours...
-            </>
-          ) : (
-            "Se connecter (Admin)"
-          )}
-        </Button>
-      </CardContent>
-    </Card>
-  );
 }

@@ -517,14 +517,10 @@ export const ChallengesPage = () => {
                 filteredChallenges.map((challenge) => {
                   // Vérifier si l'utilisateur a rejoint ce challenge
                   const isJoined = typedCurrentChallenge?.id === challenge.id || 
-                                  challenge.isJoined || 
-                                  (challenge.participantsList && challenge.participantsList.some(p => p.userId === user?.id)) ||
-                                  !!challenge.userParticipation;
+                                  challenge.isJoined 
                   
                   // Vérifier si l'utilisateur a abandonné ce challenge
-                  const hasAbandoned = (challenge.participantsList && 
-                                       challenge.participantsList.some(p => p.userId === user?.id && p.status === 'abandoned')) ||
-                                      challenge.userParticipation?.status === 'ABANDONED';
+                  const hasAbandoned = challenge.userParticipation?.status === 'ABANDONED';
                   
                   console.log('ChallengesPage - Challenge:', challenge.title, 'isJoined:', isJoined, 'hasAbandoned:', hasAbandoned, 'currentChallengeId:', typedCurrentChallenge?.id, 'challengeId:', challenge.id, 'participantsList:', challenge.participantsList, 'userParticipation:', challenge.userParticipation);
                   

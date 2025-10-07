@@ -268,7 +268,7 @@ const Feed = () => {
       <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Actualités Communautaires
+            Forum
           </h1>
           <p className="text-gray-600 mt-1">
             Découvrez les dernières activités de votre communauté d'épargnants
@@ -494,14 +494,10 @@ const Feed = () => {
                 
                 // Vérifier si l'utilisateur a rejoint ce challenge
                 const isJoined = typedCurrentChallenge?.id === challenge.id || 
-                                savingsChallenge.isJoined || 
-                                (savingsChallenge.participantsList && savingsChallenge.participantsList.some(p => p.userId === user?.id)) ||
-                                !!savingsChallenge.userParticipation;
+                                savingsChallenge.isJoined
                 
                 // Vérifier si l'utilisateur a abandonné ce challenge
-                const hasAbandoned = (savingsChallenge.participantsList && 
-                                     savingsChallenge.participantsList.some(p => p.userId === user?.id && p.status === 'abandoned')) ||
-                                    savingsChallenge.userParticipation?.status === 'ABANDONED';
+                const hasAbandoned = savingsChallenge.userParticipation?.status === 'ABANDONED';
                 
                 return (
                   <ChallengeCard

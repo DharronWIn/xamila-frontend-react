@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, RotateCcw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, RotateCcw, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -20,6 +20,20 @@ export const MediaPlayer = ({ src, type, title, onClose, thumbnail }: MediaPlaye
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
+
+  // Fonction pour extraire l'ID de la vidéo YouTube
+  const getYouTubeVideoId = (url: string): string | null => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  // Vérifier si c'est une URL YouTube
+  const isYouTubeUrl = (url: string): boolean => {
+    return url.includes('youtube.com') || url.includes('youtu.be');
+  };
+
+  const youtubeVideoId = isYouTubeUrl(src) ? getYouTubeVideoId(src) : null;
 
   useEffect(() => {
     const media = mediaRef.current;
@@ -116,13 +130,39 @@ export const MediaPlayer = ({ src, type, title, onClose, thumbnail }: MediaPlaye
       <CardContent className="p-0">
         <div className="relative">
           {type === 'video' ? (
-            <video
-              ref={mediaRef as React.RefObject<HTMLVideoElement>}
-              src={src}
-              poster={thumbnail}
-              className="w-full h-auto max-h-96 object-cover"
-              onClick={togglePlayPause}
-            />
+            youtubeVideoId ? (
+              // Affichage YouTube avec iframe
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`}
+                  title={title}
+                  className="absolute top-0 left-0 w-full h-full rounded-t-lg"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+                <div className="absolute top-4 right-4">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => window.open(src, '_blank')}
+                    className="bg-black/50 hover:bg-black/70 text-white"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Ouvrir sur YouTube
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              // Vidéo normale
+              <video
+                ref={mediaRef as React.RefObject<HTMLVideoElement>}
+                src={src}
+                poster={thumbnail}
+                className="w-full h-auto max-h-96 object-cover"
+                onClick={togglePlayPause}
+              />
+            )
           ) : (
             <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-8 text-center">
               <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -137,8 +177,9 @@ export const MediaPlayer = ({ src, type, title, onClose, thumbnail }: MediaPlaye
             </div>
           )}
 
-          {/* Controls */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+          {/* Controls - Only for non-YouTube videos */}
+          {!youtubeVideoId && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
             <div className="space-y-3">
               {/* Progress Bar */}
               <div className="space-y-1">
@@ -203,20 +244,25 @@ export const MediaPlayer = ({ src, type, title, onClose, thumbnail }: MediaPlaye
                     </Button>
                   )}
                   
-                  {onClose && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={onClose}
-                      className="text-white hover:bg-white/20"
-                    >
-                      Fermer
-                    </Button>
-                  )}
                 </div>
               </div>
             </div>
           </div>
+          )}
+
+          {/* Bouton Fermer - Toujours visible */}
+          {onClose && (
+            <div className="absolute top-4 left-4">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onClose}
+                className="bg-black/50 hover:bg-black/70 text-white"
+              >
+                ✕
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

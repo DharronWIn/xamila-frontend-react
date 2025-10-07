@@ -8,9 +8,6 @@ import { Button } from "@/components/ui/button";
 import { ThemeSelector } from "@/components/ui/theme-selector";
 import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
 import { LogIn, Home, LogOut } from "lucide-react";
-import { TestLogin } from "@/components/TestLogin";
-import { AuthDebug } from "@/components/AuthDebug";
-import { PremiumTest } from "@/components/PremiumTest";
 import logoXAmila from "@/assets/images/logo-x-amila.png";
 
 const Index = () => {
@@ -66,7 +63,7 @@ const Index = () => {
             <img 
               src={logoXAmila} 
               alt="X AMILA" 
-              className="h-16 w-auto" 
+              className="h-20 w-auto" 
             />
             {/* <span className="text-white font-semibold text-lg">Challenge d'Épargne</span> */}
           </div>
@@ -115,20 +112,14 @@ const Index = () => {
           </div>
         </div>
       </motion.nav>
-
+      {/* Contenu de home */}
+      
       <HomePage 
         onGetStarted={handleGetStarted} 
         isAuthenticated={isAuthenticated}
         onGoToDashboard={handleGoToDashboard}
       />
-      
-      {/* Composants de test pour la logique de connexion */}
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <TestLogin />
-        <AuthDebug />
-        <PremiumTest />
-      </div>
-      
+
       <RegistrationModal 
         isOpen={isRegistrationOpen}
         onClose={() => setIsRegistrationOpen(false)}

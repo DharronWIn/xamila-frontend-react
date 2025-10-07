@@ -1,27 +1,27 @@
 import {
-  Home,
-  FileText,
-  TrendingUp,
-  Target,
-  CreditCard,
-  Bell,
-  Users, HelpCircle,
-  Crown,
-  LogOut,
-  Trophy,
-  MessageCircle, DollarSign,
-  Building2, Wallet
+    Home,
+    FileText,
+    TrendingUp,
+    Target,
+    CreditCard,
+    Bell,
+    Users, HelpCircle,
+    Crown,
+    LogOut,
+    Trophy,
+    MessageCircle, DollarSign,
+    Building2, Wallet
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+    Sidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
@@ -124,7 +124,7 @@ export function AppSidebar() {
             <img 
               src={logo6Mois} 
               alt="6 MOIS Challenge Epargne" 
-              className="h-13 w-auto"
+              className="h-16 w-auto"
             />
           </div>
         </div>

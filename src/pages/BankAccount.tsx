@@ -1,17 +1,16 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  CreditCard, 
-  Building, 
-  Shield, 
-  Percent,
-  CheckCircle,
-  ArrowRight,
-  Star,
-  Award,
-  Phone,
-  Mail,
-  MapPin
+import {
+    CreditCard,
+    Building,
+    Shield,
+    Percent,
+    CheckCircle,
+    ArrowRight,
+    Star,
+    Award,
+    Phone,
+    Mail, Download
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Bank {
@@ -32,45 +31,56 @@ interface Bank {
   benefits: string[];
   requirements: string[];
   recommended?: boolean;
+  procedureUrl?: string;
+  website?: string;
+  phone?: string;
+  email?: string;
 }
 
 const partnerBanks: Bank[] = [
   {
     id: 1,
-    name: "Banque Épargne Plus",
+    name: "NSIA Banque",
     logo: "🏦",
     rating: 4.8,
     interestRate: 2.5,
-    features: ["Compte épargne rémunéré", "Application mobile", "Carte bancaire gratuite"],
-    benefits: ["Ouverture en ligne rapide", "Frais réduits", "Support client dédié"],
-    requirements: ["Âge minimum 18 ans", "Justificatif de revenus", "Pièce d'identité"],
-    recommended: true
+    features: ["Compte épargne rémunéré", "Application mobile", "Carte bancaire gratuite", "Plan épargne automatique"],
+    benefits: ["Ouverture en ligne rapide", "Frais réduits", "Support client dédié", "Intégration avec X-Amilà"],
+    requirements: ["Âge minimum 18 ans", "Justificatif de revenus", "Pièce d'identité", "Domiciliation en Côte d'Ivoire"],
+    procedureUrl: "/documents/procedure-ouverture-compte-nsia.pdf",
+    website: "https://www.nsiabanque.ci",
+    phone: "+225 20 30 40 50",
+    email: "contact@nsiabanque.ci"
   },
   {
     id: 2,
-    name: "Crédit Moderne",
-    logo: "💳",
+    name: "ADEC (Agence de Développement de l'Économie Circulaire)",
+    logo: "🌱",
     rating: 4.6,
     interestRate: 2.1,
-    features: ["Livret épargne", "Crédit facilité", "Assurance incluse"],
-    benefits: ["Taux préférentiels", "Conseiller personnel", "Agences nombreuses"],
-    requirements: ["Revenus réguliers", "Domiciliation possible", "Dossier complet"]
-  },
-  {
-    id: 3,
-    name: "Banque Digitale Pro",
-    logo: "📱",
-    rating: 4.4,
-    interestRate: 1.8,
-    features: ["100% digital", "Virements instantanés", "Notifications temps réel"],
-    benefits: ["Frais transparents", "Interface intuitive", "Support 24h/7j"],
-    requirements: ["Smartphone requis", "Email valide", "Signature électronique"]
+    features: ["Compte épargne durable", "Financement vert", "Assurance incluse", "Plan épargne écologique"],
+    benefits: ["Taux préférentiels", "Conseiller personnel", "Agences nombreuses", "Impact environnemental positif"],
+    requirements: ["Revenus réguliers", "Domiciliation possible", "Dossier complet", "Engagement écologique"],
+    procedureUrl: "/documents/procedure-ouverture-compte-adec.pdf",
+    website: "https://www.adec.ci",
+    phone: "+225 20 30 40 60",
+    email: "contact@adec.ci"
   }
 ];
 
 export default function BankAccount() {
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
+
+  const handleDownloadProcedure = (bank: Bank) => {
+    if (bank.procedureUrl) {
+      // Simuler le téléchargement du PDF
+      const link = document.createElement('a');
+      link.href = bank.procedureUrl;
+      link.download = `procedure-ouverture-compte-${bank.name.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      link.click();
+    }
+  };
 
   return (
     <motion.div
@@ -139,7 +149,7 @@ export default function BankAccount() {
       </Card>
 
       {/* Partner Banks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {partnerBanks.map((bank, index) => (
           <motion.div
             key={bank.id}
@@ -233,6 +243,54 @@ export default function BankAccount() {
                         ))}
                       </ul>
                     </div>
+
+                    {/* Informations de contact */}
+                    <div>
+                      <h4 className={`font-medium mb-2 ${bank.recommended ? "text-white" : ""}`}>
+                        Contact
+                      </h4>
+                      <div className="space-y-1">
+                        {bank.phone && (
+                          <div className={`flex items-center text-sm ${
+                            bank.recommended ? "text-white/90" : "text-muted-foreground"
+                          }`}>
+                            <Phone className={`h-3 w-3 mr-2 ${
+                              bank.recommended ? "text-white" : "text-primary"
+                            }`} />
+                            {bank.phone}
+                          </div>
+                        )}
+                        {bank.email && (
+                          <div className={`flex items-center text-sm ${
+                            bank.recommended ? "text-white/90" : "text-muted-foreground"
+                          }`}>
+                            <Mail className={`h-3 w-3 mr-2 ${
+                              bank.recommended ? "text-white" : "text-primary"
+                            }`} />
+                            {bank.email}
+                          </div>
+                        )}
+                        {bank.website && (
+                          <div className={`flex items-center text-sm ${
+                            bank.recommended ? "text-white/90" : "text-muted-foreground"
+                          }`}>
+                            <Building className={`h-3 w-3 mr-2 ${
+                              bank.recommended ? "text-white" : "text-primary"
+                            }`} />
+                            <a 
+                              href={bank.website} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className={`hover:underline ${
+                                bank.recommended ? "text-white/90" : "text-primary"
+                              }`}
+                            >
+                              Site web
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -247,6 +305,20 @@ export default function BankAccount() {
                   >
                     <CreditCard className="h-4 w-4 mr-2" />
                     Ouvrir un compte
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className={`w-full ${
+                      bank.recommended 
+                        ? "border-white/30 text-white hover:bg-white/10" 
+                        : "border-border"
+                    }`}
+                    size="sm"
+                    onClick={() => handleDownloadProcedure(bank)}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Télécharger la procédure
                   </Button>
                   
                   <Button 

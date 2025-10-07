@@ -1,19 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
-    FileText,
-    Download,
-    Lock,
-    BookOpen,
-    Target, Crown,
-    CheckCircle, Play,
-    Headphones,
-    Video
+  FileText,
+  Download,
+  Lock,
+  BookOpen,
+  Target, Crown,
+  CheckCircle, Play,
+  Headphones,
+  Video, CreditCard,
+  Wallet
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
 import { useResources } from "@/lib/apiComponent/hooks/useResources";
 import { usePremiumProtection } from "@/hooks/usePremiumProtection";
@@ -96,82 +101,147 @@ const Resources = () => {
   const [currentMedia, setCurrentMedia] = useState<MediaItem | null>(null);
   const [showMediaPlayer, setShowMediaPlayer] = useState(false);
   const [selectedCatalog, setSelectedCatalog] = useState<Resource | null>(null);
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [calculatorData, setCalculatorData] = useState({
+    currency: 'EUR',
+    monthlyIncome: 0,
+    isVariableIncome: false,
+    incomeHistory: [0, 0, 0, 0, 0, 0],
+    timeframe: 6, // Durée en mois pour le calcul
+    mode: 'free' as 'free' | 'forced',
+    bankAccountId: '',
+    motivation: ''
+  });
 
-  // API hooks
+  // API hooks (not used with mock data)
   const { 
-    resources, 
-    categories, 
     isLoading, 
-    error, 
-    getResources, 
-    getCategories, 
-    searchResources,
-    downloadResource 
+    error
   } = useResources();
 
-  // Load resources and categories on component mount
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        await Promise.all([
-          getResources(),
-          getCategories()
-        ]);
-      } catch (err) {
-        console.error('Failed to load resources:', err);
-        toast.error('Erreur lors du chargement des ressources');
-      }
-    };
-    
-    loadData();
-  }, [getResources, getCategories]);
-
-  // Handle search
-  useEffect(() => {
-    const handleSearch = async () => {
-      if (searchQuery.trim()) {
-        try {
-          await searchResources(searchQuery);
-        } catch (err) {
-          console.error('Search failed:', err);
+  const resourcesData: Resource[] = [
+    // Règles de l'épargne (PDF) - GRATUIT
+    {
+      id: "1",
+      title: "Règles du challenge d'epargne",
+      description: "Les règles d'or pour réussir votre challenge d'epargne",
+      type: "PDF",
+      category: "Éducation",
+      isPremium: false,
+      downloadCount: 1250,
+      url: "/documents/regles-epargne.pdf",
+      createdAt: "2024-01-15",
+      icon: BookOpen
+    },
+    {
+      id: "2",
+      title: "Charte de l'epargnant",
+      description: "Definition de la charte de l'epargnant",
+      type: "PDF",
+      category: "Éducation",
+      isPremium: false,
+      downloadCount: 890,
+      url: "/documents/charte-epargne.pdf",
+      createdAt: "2024-01-10",
+      icon: BookOpen
+    },
+    {
+      id: "3",
+      title: "Calculatrice d'objectifs d'épargne",
+      description: "Outil interactif pour calculer vos objectifs d'épargne personnalisés",
+      type: "TOOL",
+      category: "Outils",
+      isPremium: false,
+      downloadCount: 680,
+      url: "/tools/calculatrice-epargne",
+      createdAt: "2024-01-08",
+      icon: Target
+    },
+    // Documents d'engagement (PDF à générer) - GRATUIT
+    {
+      id: "4",
+      title: "Document d'engagement personnel",
+      description: "Générez votre document d'engagement officiel pour le challenge d'épargne",
+      type: "TOOL",
+      category: "Documents",
+      isPremium: false,
+      downloadCount: 450,
+      url: "/tools/document-engagement",
+      createdAt: "2024-01-05",
+      icon: FileText
+    },
+    // Certificat de réussite (PDF à générer) - PREMIUM
+    {
+      id: "5",
+      title: "Certificat de réussite du challenge",
+      description: "Générez votre certificat officiel de réussite du challenge d'épargne",
+      type: "TOOL",
+      category: "Certificats",
+      isPremium: true,
+      downloadCount: 320,
+      url: "/tools/certificat-reussite",
+      createdAt: "2024-01-20",
+      icon: Crown
+    },
+    // Webinaires (playlist audio et vidéo) - PREMIUM
+    {
+      id: "6",
+      title: "Webinaires d'éducation financière",
+      description: "Playlist complète de webinaires sur l'épargne et la gestion financière",
+      type: "VIDEO",
+      category: "Formation",
+      isPremium: true,
+      downloadCount: 280,
+      url: "/videos/webinaires",
+      createdAt: "2024-01-18",
+      icon: Video,
+      mediaItems: [
+        {
+          id: "w1",
+          title: "Introduction à l'épargne intelligente",
+          description: "Les bases de l'épargne et comment commencer",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          type: "video",
+          duration: "15:30",
+          thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
+        },
+        {
+          id: "w2",
+          title: "Gestion du budget familial",
+          description: "Techniques pour gérer efficacement le budget de votre famille",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          type: "video",
+          duration: "22:45",
+          thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
+        },
+        {
+          id: "w3",
+          title: "Investir ses économies",
+          description: "Comment faire fructifier son épargne de manière sûre",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          type: "video",
+          duration: "18:20",
+          thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
         }
-      } else {
-        try {
-          await getResources();
-        } catch (err) {
-          console.error('Failed to load resources:', err);
-        }
-      }
-    };
+      ]
+    },
+  ];
 
-    const timeoutId = setTimeout(handleSearch, 300);
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, searchResources, getResources]);
+  // Use mock data instead of API
+  const categories = ["Tous", "Éducation", "Outils", "Documents", "Certificats", "Formation"];
+  const resources = resourcesData;
 
-  // Handle category filter
-  useEffect(() => {
-    const handleCategoryFilter = async () => {
-      try {
-        if (selectedCategory === 'Tous') {
-          await getResources();
-        } else {
-          await getResources({ category: selectedCategory });
-        }
-      } catch (err) {
-        console.error('Failed to filter resources:', err);
-      }
-    };
-
-    handleCategoryFilter();
-  }, [selectedCategory, getResources]);
-
+  // Handle search and filtering with local data
   const filteredResources = resources.filter(resource => {
-    const matchesCategory = selectedCategory === 'Tous' || resource.category === selectedCategory;
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = !searchQuery || 
       resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       resource.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    
+    const matchesCategory = selectedCategory === "Tous" || resource.category === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
   });
+
 
   // Create categories list with "Tous" option
   const allCategories = ['Tous', ...categories];
@@ -183,16 +253,35 @@ const Resources = () => {
     }
 
     try {
-      // Handle certificate generation for special resources
-      if (resource.title.includes('engagement') || resource.title.includes('Document d\'engagement')) {
-        setShowEngagementModal(true);
-      } else if (resource.title.includes('certificat') || resource.title.includes('Certificat')) {
-        setShowSuccessModal(true);
-      } else {
-        // Use API for actual download
-        await downloadResource(resource.id);
-        toast.success(`Téléchargement de "${resource.title}" commencé`);
+      // Handle PDF generation tools
+      if (resource.type === 'TOOL') {
+        if (resource.id === '4') {
+          // Document d'engagement
+          setShowEngagementModal(true);
+          return;
+        } else if (resource.id === '5') {
+          // Certificat de réussite
+          setShowSuccessModal(true);
+          return;
+        } else if (resource.id === '3') {
+          // Calculatrice d'objectifs d'épargne
+          setShowCalculator(true);
+          return;
+        }
       }
+
+      // Handle media items (webinaires, podcasts) - Open playlist
+      if (resource.mediaItems && resource.mediaItems.length > 0) {
+        setSelectedCatalog(resource);
+        return;
+      }
+
+      // Handle regular downloads (PDFs)
+      const link = document.createElement('a');
+      link.href = resource.url || '#';
+      link.download = resource.title;
+      link.click();
+      toast.success(`Téléchargement de "${resource.title}" commencé`);
     } catch (err) {
       console.error('Download failed:', err);
       toast.error('Erreur lors du téléchargement');
@@ -225,6 +314,28 @@ const Resources = () => {
   const closeCatalog = () => {
     setSelectedCatalog(null);
   };
+
+  const closeCalculator = () => {
+    setShowCalculator(false);
+  };
+
+  const calculateTargetAmount = () => {
+    if (calculatorData.isVariableIncome) {
+      const validIncomes = calculatorData.incomeHistory.filter(income => income > 0);
+      if (validIncomes.length === 0) return 0;
+      const average = validIncomes.reduce((sum, income) => sum + income, 0) / validIncomes.length;
+      return Math.round(average * 0.1 * calculatorData.timeframe);
+    } else {
+      return Math.round(calculatorData.monthlyIncome * 0.1 * calculatorData.timeframe);
+    }
+  };
+
+  // Mock bank accounts - comme dans le formulaire de challenge
+  const bankAccounts = [
+    { id: '1', name: 'Compte Courant - Crédit Agricole', balance: 2500.50 },
+    { id: '2', name: 'Livret A - BNP Paribas', balance: 1200.75 },
+    { id: '3', name: 'Compte Épargne - Société Générale', balance: 5000.00 }
+  ];
 
   const getTypeIcon = (type: string) => {
     return getResourceIcon(type);
@@ -350,7 +461,7 @@ const Resources = () => {
             <p className="text-lg font-semibold">Erreur de chargement</p>
             <p className="text-sm">{error}</p>
           </div>
-          <Button onClick={() => getResources()}>
+          <Button onClick={() => window.location.reload()}>
             Réessayer
           </Button>
         </motion.div>
@@ -417,13 +528,43 @@ const Resources = () => {
                     {resource.isPremium && !isPremium ? (
                       <>
                         <Lock className="w-4 h-4 mr-2" />
-                        Débloquer
+                        Débloquer Premium
                       </>
                     ) : (
                       <>
-                        <Download className="w-4 h-4 mr-2" />
-                        {resource.type === 'TOOL' ? 'Utiliser' : 
-                         resource.title.includes('engagement') || resource.title.includes('certificat') ? 'Générer' : 'Télécharger'}
+                        {resource.type === 'TOOL' ? (
+                          resource.id === '3' ? (
+                            <>
+                              <Target className="w-4 h-4 mr-2" />
+                              Calculer
+                            </>
+                          ) : resource.id === '4' ? (
+                            <>
+                              <FileText className="w-4 h-4 mr-2" />
+                              Générer
+                            </>
+                          ) : resource.id === '5' ? (
+                            <>
+                              <Crown className="w-4 h-4 mr-2" />
+                              Générer
+                            </>
+                          ) : (
+                            <>
+                              <Target className="w-4 h-4 mr-2" />
+                              Utiliser
+                            </>
+                          )
+                        ) : resource.type === 'VIDEO' || resource.type === 'AUDIO' ? (
+                          <>
+                            <Play className="w-4 h-4 mr-2" />
+                            Voir la playlist
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            Télécharger
+                          </>
+                        )}
                       </>
                     )}
                   </Button>
@@ -592,6 +733,243 @@ const Resources = () => {
               onClose={closeMediaPlayer}
             />
           </div>
+        </div>
+      )}
+
+      {/* Calculator Modal */}
+      {showCalculator && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Target className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Calculatrice d'Objectifs d'Épargne</h2>
+                  <p className="text-gray-600">Calculez votre objectif d'épargne personnalisé</p>
+                </div>
+              </div>
+              <Button
+                onClick={closeCalculator}
+                variant="ghost"
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </Button>
+            </div>
+
+            {/* Form - Basé sur le formulaire de challenge */}
+            <div className="space-y-6">
+              {/* Devise et Type de revenus */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="currency">Devise</Label>
+                  <Select value={calculatorData.currency} onValueChange={(value) => setCalculatorData({...calculatorData, currency: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EUR">Euro (€)</SelectItem>
+                      <SelectItem value="USD">Dollar ($)</SelectItem>
+                      <SelectItem value="XOF">Franc CFA (XOF)</SelectItem>
+                      <SelectItem value="MAD">Dirham (MAD)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Type de revenus</Label>
+                  <RadioGroup 
+                    value={calculatorData.isVariableIncome ? 'variable' : 'fixed'} 
+                    onValueChange={(value) => setCalculatorData({...calculatorData, isVariableIncome: value === 'variable'})}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="fixed" id="fixed" />
+                      <Label htmlFor="fixed">Revenu fixe</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="variable" id="variable" />
+                      <Label htmlFor="variable">Revenus variables</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+
+              {/* Revenus */}
+              {!calculatorData.isVariableIncome ? (
+                <div>
+                  <Label htmlFor="monthlyIncome">Revenu mensuel fixe</Label>
+                  <Input
+                    id="monthlyIncome"
+                    type="number"
+                    value={calculatorData.monthlyIncome}
+                    onChange={(e) => setCalculatorData({...calculatorData, monthlyIncome: parseFloat(e.target.value) || 0})}
+                    placeholder="Ex: 2500"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Votre objectif sera calculé à 10% de votre revenu sur {calculatorData.timeframe} mois
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <Label>Vos revenus des 6 derniers mois</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {calculatorData.incomeHistory.map((income, index) => (
+                      <Input
+                        key={index}
+                        type="number"
+                        placeholder={`Mois ${index + 1}`}
+                        value={income || ''}
+                        onChange={(e) => {
+                          const newHistory = [...calculatorData.incomeHistory];
+                          newHistory[index] = parseFloat(e.target.value) || 0;
+                          setCalculatorData({...calculatorData, incomeHistory: newHistory});
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Nous calculerons la moyenne pour déterminer votre objectif sur {calculatorData.timeframe} mois
+                  </p>
+                </div>
+              )}
+
+              {/* Durée du challenge */}
+              <div>
+                <Label htmlFor="timeframe">Durée du challenge (mois)</Label>
+                <Input
+                  id="timeframe"
+                  type="number"
+                  value={calculatorData.timeframe}
+                  onChange={(e) => setCalculatorData({...calculatorData, timeframe: parseInt(e.target.value) || 6})}
+                  placeholder="Ex: 6"
+                  min="1"
+                  max="24"
+                />
+              </div>
+
+              {/* Mode de participation */}
+              <div>
+                <Label>Mode de participation</Label>
+                <RadioGroup
+                  value={calculatorData.mode}
+                  onValueChange={(value) => setCalculatorData({ ...calculatorData, mode: value as 'free' | 'forced' })}
+                  className="mt-2"
+                >
+                  <div className="flex items-start space-x-3 p-3 border rounded-lg">
+                    <RadioGroupItem value="free" id="free" className="mt-1" />
+                    <div className="flex-1">
+                      <Label htmlFor="free" className="flex items-center space-x-2 cursor-pointer">
+                        <Wallet className="w-4 h-4" />
+                        <span className="font-medium">Mode Libre</span>
+                      </Label>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Vous gérez vos versements manuellement sans connexion bancaire
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3 p-3 border rounded-lg">
+                    <RadioGroupItem value="forced" id="forced" className="mt-1" />
+                    <div className="flex-1">
+                      <Label htmlFor="forced" className="flex items-center space-x-2 cursor-pointer">
+                        <CreditCard className="w-4 h-4" />
+                        <span className="font-medium">Mode Forcé</span>
+                      </Label>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Vos versements sont automatiquement prélevés de votre compte bancaire
+                      </p>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {calculatorData.mode === 'forced' && (
+                <div>
+                  <Label htmlFor="bankAccount">Compte bancaire</Label>
+                  <Select
+                    value={calculatorData.bankAccountId}
+                    onValueChange={(value) => setCalculatorData({ ...calculatorData, bankAccountId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez un compte" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bankAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{account.name}</span>
+                            <span className="text-sm text-gray-500 ml-2">
+                              {account.balance.toLocaleString()}€
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Aperçu de l'objectif */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-900 mb-2">Aperçu de votre objectif</h4>
+                <p className="text-blue-800">
+                  Objectif total : <span className="font-bold">{calculateTargetAmount().toLocaleString()} {calculatorData.currency}</span>
+                </p>
+                <p className="text-blue-700 text-sm mt-1">
+                  Durée du challenge : {calculatorData.timeframe} mois
+                </p>
+                <p className="text-blue-700 text-sm">
+                  Soit environ {Math.round(calculateTargetAmount() / calculatorData.timeframe).toLocaleString()} {calculatorData.currency} par mois
+                </p>
+              </div>
+
+              {/* Motivation */}
+              <div>
+                <Label htmlFor="motivation">Motivation (optionnel)</Label>
+                <Textarea
+                  id="motivation"
+                  placeholder="Pourquoi voulez-vous épargner ?"
+                  value={calculatorData.motivation}
+                  onChange={(e) => setCalculatorData({ ...calculatorData, motivation: e.target.value })}
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex space-x-3 mt-6">
+              <Button
+                onClick={closeCalculator}
+                variant="outline"
+                className="flex-1"
+              >
+                Fermer
+              </Button>
+              <Button
+                onClick={() => {
+                  const targetAmount = calculateTargetAmount();
+                  if (targetAmount > 0) {
+                    toast.success(`Objectif calculé : ${targetAmount.toLocaleString()} ${calculatorData.currency} sur ${calculatorData.timeframe} mois`);
+                  } else {
+                    toast.warning('Veuillez saisir vos revenus pour calculer l\'objectif');
+                  }
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Calculer
+              </Button>
+            </div>
+          </motion.div>
         </div>
       )}
     </motion.div>

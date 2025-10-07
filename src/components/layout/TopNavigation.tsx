@@ -1,4 +1,4 @@
-import { Bell, User, LogOut, Settings, MessageCircle, Target } from "lucide-react";
+import { Bell, User, LogOut, MessageCircle, Target, Shield, Users, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,17 +8,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { NotificationCenter } from "@/components/social/NotificationCenter";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { UserAvatar } from "../ui/UserAvatar";
 
 export function TopNavigation() {
   const { user, logout } = useAuth();
   const isPremium = user?.isPremium || false;
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Détecter si on est sur une page admin
+  const isAdminPage = location.pathname.startsWith('/admin');
+  
+  // Vérifier si l'utilisateur est admin
+  const isAdmin = user?.isAdmin || false;
 
   return (
     <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-6">
@@ -37,7 +44,18 @@ export function TopNavigation() {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Actualités */}
+        {/* Accueil */}
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2"
+        >
+          <Home className="w-4 h-4" />
+          <span className="hidden md:inline">Accueil</span>
+        </Button>
+
+        {/* Forum */}
         <Button 
           variant="ghost" 
           size="sm"
@@ -45,7 +63,7 @@ export function TopNavigation() {
           className="flex items-center gap-2"
         >
           <MessageCircle className="w-4 h-4" />
-          <span className="hidden md:inline">Actualités</span>
+          <span className="hidden md:inline">Forum</span>
         </Button>
 
         {/* Plan épargne */}
@@ -59,6 +77,38 @@ export function TopNavigation() {
           <span className="hidden md:inline font-semibold">Plan épargne</span>
         </Button>
 
+        {/* Admin/User Switch Button - Only show if user is admin */}
+        {isAdmin && (
+          <Button 
+            variant={isAdminPage ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              if (isAdminPage) {
+                navigate('/user-dashboard');
+              } else {
+                navigate('/admin');
+              }
+            }}
+            className={`flex items-center gap-2 ${
+              isAdminPage 
+                ? 'bg-red-600 hover:bg-red-700 text-white' 
+                : 'border-red-200 text-red-600 hover:bg-red-50'
+            }`}
+          >
+            {isAdminPage ? (
+              <>
+                <Users className="w-4 h-4" />
+                <span className="hidden md:inline">Mode Utilisateur</span>
+              </>
+            ) : (
+              <>
+                <Shield className="w-4 h-4" />
+                <span className="hidden md:inline">Mode Admin</span>
+              </>
+            )}
+          </Button>
+        )}
+
         {/* Theme Toggle */}
         <ThemeToggle variant="icon" />
 
@@ -69,11 +119,12 @@ export function TopNavigation() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 hover:bg-accent">
-              <Avatar className="w-8 h-8">
+              {/* <Avatar className="w-8 h-8">
                 <AvatarFallback className="bg-gradient-primary text-white text-sm">
                   {user?.name?.charAt(0)?.toUpperCase() || user?.firstName?.charAt(0)?.toUpperCase() || 'U'}
                 </AvatarFallback>
-              </Avatar>
+              </Avatar> */}
+              <UserAvatar user={user} className="w-8 h-8" />
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium">{user?.name || `${user?.firstName} ${user?.lastName}` || 'Utilisateur'}</p>
                 <p className="text-xs text-muted-foreground">
