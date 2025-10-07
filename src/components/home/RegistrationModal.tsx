@@ -10,7 +10,8 @@ import {
   User, Calendar,
   Loader2,
   MapPin,
-  Briefcase
+  Briefcase,
+  CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import { toast } from "sonner";
 import { SubscriptionPlan } from "@/types/subscription";
 import SubscriptionPlanSelector from "@/components/auth/SubscriptionPlanSelector";
 import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
+import type { RegisterResponse } from "@/lib/apiComponent/hooks/useAuth";
 
 const registrationSchema = z.object({
   // Step 1: Informations personnelles
@@ -118,6 +120,16 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
   const [step, setStep] = useState(1);
   const { registerWithPlan } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [apiResponse, setApiResponse] = useState<RegisterResponse | null>(null);
+  const [showResponseModal, setShowResponseModal] = useState(false);
+
+  const handleCloseResponseModal = () => {
+    setShowResponseModal(false);
+    setApiResponse(null);
+    onClose();
+    setStep(1);
+    form.reset();
+  };
 
   const form = useForm<ExtendedRegisterData>({
     resolver: zodResolver(registrationSchema),
@@ -197,12 +209,11 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
       // L'apiClient extrait déjà les données, donc response contient directement { user, message, errors }
       console.log('Registration response:', response);
 
-      toast.success(
-        response.message || "Inscription réussie ! Vérifiez votre email pour activer votre compte."
-      );
-      onClose();
-      setStep(1);
-      form.reset();
+      // Stocker la réponse et afficher le modal de réponse
+      setApiResponse(response);
+      setShowResponseModal(true);
+      
+      // Ne pas fermer le modal principal, juste afficher la réponse
     } catch (error: unknown) {
       console.error("Erreur inscription:", error);
       const errorMessage =
@@ -1241,6 +1252,148 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
           </motion.div>
         </motion.div>
       )}
+
+      {/* Modal de réponse API */}
+      <AnimatePresence>
+        {showResponseModal && apiResponse && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-6">
+                {/* En-tête */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">
+                        Inscription réussie !
+                      </h2>
+                      <p className="text-sm text-gray-600">
+                        Votre compte a été créé avec succès
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCloseResponseModal}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                {/* Message de l'API */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-green-800 font-medium">
+                        {apiResponse.message || "Inscription réussie ! Vérifiez votre email pour activer votre compte."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Détails de l'utilisateur créé */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Détails de votre compte
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Nom complet</label>
+                        <p className="text-gray-900">
+                          {apiResponse.user.firstName} {apiResponse.user.lastName}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Email</label>
+                        <p className="text-gray-900">{apiResponse.user.email}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Téléphone</label>
+                        <p className="text-gray-900">{apiResponse.user.phone}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Pays</label>
+                        <p className="text-gray-900">{apiResponse.user.country}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Ville</label>
+                        <p className="text-gray-900">{apiResponse.user.city}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Mode de challenge</label>
+                        <p className="text-gray-900">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            apiResponse.user.challengeMode === 'PREMIUM' 
+                              ? 'bg-purple-100 text-purple-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {apiResponse.user.challengeFormula}
+                          </span>
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Statut</label>
+                        <p className="text-gray-900">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            apiResponse.user.isVerified 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {apiResponse.user.isVerified ? 'Vérifié' : 'En attente de vérification'}
+                          </span>
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Date de création</label>
+                        <p className="text-gray-900">
+                          {new Date(apiResponse.user.createdAt).toLocaleDateString('fr-FR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 mt-8 pt-6 border-t border-gray-200">
+                  <Button
+                    onClick={handleCloseResponseModal}
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Parfait, j'ai compris
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AnimatePresence>
   );
 }
