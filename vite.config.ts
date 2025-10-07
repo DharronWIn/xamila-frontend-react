@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     allowedHosts: [
       "xamila-frontend-react.onrender.com",
+      "xamila-app-backend-nestjs.onrender.com",
       "localhost", 
     ],
   },
