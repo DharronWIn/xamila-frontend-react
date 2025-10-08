@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "homepage": "https://DharronWIn.github.io/xamila-frontend-react",
     "dev:dev": "node scripts/start-env.js dev",
     "dev:preprod": "node scripts/start-env.js preprod",
     "dev:prod": "node scripts/start-env.js prod",
@@ -87,6 +88,7 @@
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "gh-pages": "^6.3.0",
     "globals": "^15.15.0",
     "lovable-tagger": "^1.1.9",
     "postcss": "^8.5.6",
