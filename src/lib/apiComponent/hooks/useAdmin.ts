@@ -242,8 +242,12 @@ export const useAdminUsers = () => {
       setIsLoading(true);
       setError(null);
       const response = await adminService.users.updateUser(id, data);
-      // Mettre à jour la liste locale
-      setUsers(prev => prev.map(user => user.id === id ? response : user));
+      // Mettre à jour la liste locale en fusionnant les données
+      setUsers(prev => prev.map(user => 
+        user.id === id 
+          ? { ...user, ...response }
+          : user
+      ));
       return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour de l\'utilisateur';
@@ -259,8 +263,12 @@ export const useAdminUsers = () => {
       setIsLoading(true);
       setError(null);
       const response = await adminService.users.toggleUserActive(id);
-      // Mettre à jour la liste locale
-      setUsers(prev => prev.map(user => user.id === id ? response : user));
+      // Mettre à jour seulement la propriété isActive de l'utilisateur
+      setUsers(prev => prev.map(user => 
+        user.id === id 
+          ? { ...user, isActive: response.isActive }
+          : user
+      ));
       return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la modification de l\'état de l\'utilisateur';
@@ -276,8 +284,12 @@ export const useAdminUsers = () => {
       setIsLoading(true);
       setError(null);
       const response = await adminService.users.toggleUserVerified(id);
-      // Mettre à jour la liste locale
-      setUsers(prev => prev.map(user => user.id === id ? response : user));
+      // Mettre à jour seulement la propriété isVerified de l'utilisateur
+      setUsers(prev => prev.map(user => 
+        user.id === id 
+          ? { ...user, isVerified: response.isVerified }
+          : user
+      ));
       return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la modification de l\'état de vérification';
@@ -310,8 +322,12 @@ export const useAdminUsers = () => {
       setIsLoading(true);
       setError(null);
       const response = await adminService.users.approveUser(id);
-      // Mettre à jour la liste locale
-      setUsers(prev => prev.map(user => user.id === id ? response : user));
+      // Mettre à jour seulement la propriété approvalStatus de l'utilisateur
+      setUsers(prev => prev.map(user => 
+        user.id === id 
+          ? { ...user, approvalStatus: response.approvalStatus }
+          : user
+      ));
       return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'approbation de l\'utilisateur';
@@ -327,8 +343,12 @@ export const useAdminUsers = () => {
       setIsLoading(true);
       setError(null);
       const response = await adminService.users.rejectUser(id, data);
-      // Mettre à jour la liste locale
-      setUsers(prev => prev.map(user => user.id === id ? response : user));
+      // Mettre à jour seulement la propriété approvalStatus de l'utilisateur
+      setUsers(prev => prev.map(user => 
+        user.id === id 
+          ? { ...user, approvalStatus: response.approvalStatus }
+          : user
+      ));
       return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors du rejet de l\'utilisateur';
@@ -344,8 +364,12 @@ export const useAdminUsers = () => {
       setIsLoading(true);
       setError(null);
       const response = await adminService.users.upgradeUserToPremium(id, data);
-      // Mettre à jour la liste locale
-      setUsers(prev => prev.map(user => user.id === id ? response : user));
+      // Mettre à jour seulement les propriétés premium de l'utilisateur
+      setUsers(prev => prev.map(user => 
+        user.id === id 
+          ? { ...user, isPremium: response.isPremium, premiumExpiresAt: response.premiumExpiresAt }
+          : user
+      ));
       return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à niveau vers Premium';
@@ -361,8 +385,12 @@ export const useAdminUsers = () => {
       setIsLoading(true);
       setError(null);
       const response = await adminService.users.approveAndUpgradeToPremium(id, data);
-      // Mettre à jour la liste locale
-      setUsers(prev => prev.map(user => user.id === id ? response : user));
+      // Mettre à jour les propriétés approvalStatus et premium de l'utilisateur
+      setUsers(prev => prev.map(user => 
+        user.id === id 
+          ? { ...user, approvalStatus: response.approvalStatus, isPremium: response.isPremium, premiumExpiresAt: response.premiumExpiresAt }
+          : user
+      ));
       return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'approbation et mise à niveau';
