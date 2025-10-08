@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
       "xamila-frontend-react.onrender.com",
       "xamila-app-backend-nestjs.onrender.com",
       "localhost",
+      "astonishing-cat-383858.netlify.app"
     ],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
