@@ -162,6 +162,53 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
   const onSubmit = async (data: ExtendedRegisterData) => {
     try {
       setIsLoading(true);
+      
+      // DEBUG: Vérification de l'état du formulaire
+      console.log('🎯 DEBUG - État du formulaire avant soumission:');
+      console.log('📋 Étape actuelle:', step);
+      console.log('✅ Formulaire valide:', form.formState.isValid);
+      console.log('❌ Erreurs du formulaire:', form.formState.errors);
+      console.log('🔄 Formulaire en cours de soumission:', form.formState.isSubmitting);
+
+      // DEBUG: Log détaillé des données reçues du formulaire
+      console.log('🔍 DEBUG - Données reçues du formulaire:');
+      console.log('📋 Toutes les données:', data);
+      console.log('📊 Nombre de champs:', Object.keys(data).length);
+      
+      // DEBUG: Log par étape
+      console.log('📝 Step 1 - Informations personnelles:');
+      console.log('  - firstName:', data.firstName);
+      console.log('  - lastName:', data.lastName);
+      console.log('  - gender:', data.gender);
+      console.log('  - ageRange:', data.ageRange);
+      
+      console.log('📝 Step 2 - Contact et localisation:');
+      console.log('  - whatsapp:', data.whatsapp);
+      console.log('  - email:', data.email);
+      console.log('  - country:', data.country);
+      console.log('  - city:', data.city);
+      
+      console.log('📝 Step 3 - Situation professionnelle:');
+      console.log('  - professionalStatus:', data.professionalStatus);
+      
+      console.log('📝 Step 4 - Culture d\'épargne:');
+      console.log('  - maxSavingsAmount:', data.maxSavingsAmount);
+      console.log('  - savingsHabit:', data.savingsHabit);
+      console.log('  - currentSavingsLevel:', data.currentSavingsLevel);
+      console.log('  - savingsUsage:', data.savingsUsage);
+      console.log('  - savingsChallenge:', data.savingsChallenge);
+      
+      console.log('📝 Step 5 - Challenge épargne:');
+      console.log('  - previousChallengeExperience:', data.previousChallengeExperience);
+      console.log('  - motivation:', data.motivation);
+      console.log('  - challengeMode:', data.challengeMode);
+      console.log('  - partnerAccounts:', data.partnerAccounts);
+      console.log('  - expenseTracking:', data.expenseTracking);
+      console.log('  - futureInterest:', data.futureInterest);
+      console.log('  - concerns:', data.concerns);
+      
+      console.log('📝 Step 6 - Configuration:');
+      console.log('  - challengeStartMonth:', data.challengeStartMonth);
 
       // Préparer les données pour l'API
       const registerData = {
@@ -202,6 +249,34 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
         // Configuration du compte
         challengeStartMonth: data.challengeStartMonth,
       };
+
+      // DEBUG: Log des données transformées pour l'API
+      console.log('🚀 DEBUG - Données transformées pour l\'API:');
+      console.log('📤 Données complètes envoyées:', registerData);
+      console.log('📊 Nombre de champs API:', Object.keys(registerData).length);
+      
+      // DEBUG: Vérification des champs générés
+      console.log('🔧 Champs générés automatiquement:');
+      console.log('  - username généré:', registerData.username);
+      console.log('  - challengeFormula dérivé:', registerData.challengeFormula);
+      console.log('  - phone (copie de whatsapp):', registerData.phone);
+      
+      // DEBUG: Vérification des champs critiques
+      console.log('⚠️ Vérification des champs critiques:');
+      console.log('  - Email valide:', data.email ? '✅' : '❌');
+      console.log('  - Nom complet:', data.firstName && data.lastName ? '✅' : '❌');
+      console.log('  - Mode challenge:', data.challengeMode ? '✅' : '❌');
+      console.log('  - Téléphone:', data.whatsapp ? '✅' : '❌');
+      
+      // Vérification que tous les champs sont bien mappés :
+      // ✅ firstName, lastName, gender, ageRange (Step 1)
+      // ✅ whatsapp, email, country, city (Step 2) 
+      // ✅ professionalStatus (Step 3)
+      // ✅ maxSavingsAmount, savingsHabit, currentSavingsLevel, savingsUsage, savingsChallenge (Step 4)
+      // ✅ previousChallengeExperience, motivation, challengeMode, partnerAccounts, expenseTracking, futureInterest, concerns (Step 5)
+      // ✅ challengeStartMonth (Step 6)
+      // ✅ username (généré automatiquement)
+      // ✅ challengeFormula (dérivé de challengeMode)
 
       // Appel à l'API d'inscription
       const response = await registerWithPlan(registerData);

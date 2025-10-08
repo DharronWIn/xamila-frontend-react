@@ -79,7 +79,7 @@ export function AppSidebar() {
   const isAdmin = user?.isAdmin || false;
   
   // Détecter si on est en mode admin ou utilisateur
-  const isAdminMode = currentPath.startsWith('/admin-dashboard');
+  const isAdminMode = currentPath.startsWith('/admin-dashboard') || currentPath === '/admin';
   const isUserMode = currentPath.startsWith('/user-dashboard') || currentPath === '/dashboard';
   
   const handleSidebarPremiumClick = (e: React.MouseEvent, url: string, isPremiumRequired: boolean) => {

@@ -2,21 +2,21 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft, Edit,
-  Trash2, XCircle, Loader2, Target,
-  TrendingUp, MessageSquare, DollarSign, Eye,
-  EyeOff
+    ArrowLeft, Edit,
+    Trash2, XCircle, Loader2, Target,
+    TrendingUp, MessageSquare, DollarSign, Eye,
+    EyeOff
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
@@ -457,6 +457,19 @@ const UserDetail = () => {
                 <div className="pt-4 border-t">
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600">Actions rapides</p>
+                    
+                    {/* DEBUG: Log des conditions des boutons */}
+                    {console.log('🔍 DEBUG UserDetail - État utilisateur:', {
+                      id: user.id,
+                      approvalStatus: user.approvalStatus,
+                      isPremium: user.isPremium,
+                      isActive: user.isActive,
+                      isVerified: user.isVerified,
+                      showApproveButtons: user.approvalStatus === 'PENDING',
+                      showUpgradeButton: !user.isPremium,
+                      showApproveAndUpgrade: user.approvalStatus === 'PENDING' && !user.isPremium
+                    })}
+                    
                     <div className="grid grid-cols-2 gap-2">
                       {/* Actions d'approbation - basées sur approvalStatus */}
                       {user.approvalStatus === "PENDING" && (
@@ -479,7 +492,7 @@ const UserDetail = () => {
                         </>
                       )}
                       
-                      {/* Actions premium - basées sur approvalStatus et isPremium */}
+                      {/* Actions premium - disponibles pour tous les utilisateurs non-premium */}
                       {!user.isPremium && (
                         <Button
                           size="sm"

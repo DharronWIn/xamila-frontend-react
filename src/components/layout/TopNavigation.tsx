@@ -1,12 +1,12 @@
 import { Bell, User, LogOut, MessageCircle, Target, Shield, Users, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { NotificationCenter } from "@/components/social/NotificationCenter";
@@ -22,7 +22,7 @@ export function TopNavigation() {
   const location = useLocation();
   
   // Détecter si on est sur une page admin
-  const isAdminPage = location.pathname.startsWith('/admin');
+  const isAdminPage = location.pathname.startsWith('/admin-dashboard') || location.pathname === '/admin';
   
   // Vérifier si l'utilisateur est admin
   const isAdmin = user?.isAdmin || false;
@@ -86,7 +86,7 @@ export function TopNavigation() {
               if (isAdminPage) {
                 navigate('/user-dashboard');
               } else {
-                navigate('/admin');
+                navigate('/admin-dashboard');
               }
             }}
             className={`flex items-center gap-2 ${

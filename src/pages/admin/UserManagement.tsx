@@ -2,17 +2,17 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Users,
-  Search, MoreHorizontal,
-  UserCheck,
-  UserX,
-  Crown, Eye,
-  Edit,
-  Trash2,
-  Plus,
-  Download,
-  Loader2,
-  RefreshCw
+    Users,
+    Search, MoreHorizontal,
+    UserCheck,
+    UserX,
+    Crown, Eye,
+    Edit,
+    Trash2,
+    Plus,
+    Download,
+    Loader2,
+    RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -458,7 +458,19 @@ const UserManagement = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(users || []).map((user, index) => (
+                  {(users || []).map((user, index) => {
+                    // DEBUG: Log des conditions des boutons pour chaque utilisateur
+                    console.log(`🔍 DEBUG User ${user.id}:`, {
+                      approvalStatus: user.approvalStatus,
+                      isPremium: user.isPremium,
+                      isActive: user.isActive,
+                      isVerified: user.isVerified,
+                      showApproveButtons: user.approvalStatus === 'PENDING',
+                      showUpgradeButton: !user.isPremium,
+                      showApproveAndUpgrade: user.approvalStatus === 'PENDING' && !user.isPremium
+                    });
+                    
+                    return (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div 
@@ -533,8 +545,8 @@ const UserManagement = () => {
                               </>
                             )}
                             
-                            {/* Actions premium - basées sur approvalStatus et isPremium */}
-                            {user.approvalStatus === 'APPROVED' && !user.isPremium && (
+                            {/* Actions premium - disponibles pour tous les utilisateurs non-premium */}
+                            {!user.isPremium && (
                               <DropdownMenuItem onClick={() => handleUpgradeToPremium(user.id)}>
                                 <Crown className="w-4 h-4 mr-2" />
                                 Mettre à niveau Premium
@@ -564,7 +576,8 @@ const UserManagement = () => {
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

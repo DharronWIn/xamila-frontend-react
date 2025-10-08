@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { api, apiClient } from '../apiClient';
 import { authEndpoints as endpoints, paymentEndpoints } from '../endpoints';
 import {
-  LoginDto, LoginResponse,
-  User, ForgotPasswordDto,
-  ResetPasswordDto,
-  ChangePasswordDto,
-  UpdateProfileDto,
-  OtpLoginDto
+    LoginDto, LoginResponse,
+    User, ForgotPasswordDto,
+    ResetPasswordDto,
+    ChangePasswordDto,
+    UpdateProfileDto,
+    OtpLoginDto
 } from '../types';
 import { SubscriptionPlan } from '@/types/subscription';
 
@@ -23,8 +23,10 @@ export interface RegisterRequest {
   
   // Contact et localisation
   phone: string;
+  username: string;
   country: string;
   city: string;
+  whatsapp: string;
   
   // Situation professionnelle
   professionalStatus: string;
