@@ -20,7 +20,9 @@
     "build:prod": "node scripts/build-env.js prod",
     "build:env": "node scripts/build-env.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
