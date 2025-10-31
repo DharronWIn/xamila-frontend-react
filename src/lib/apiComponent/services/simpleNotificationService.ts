@@ -1,4 +1,4 @@
-
+import { api, tokenManager } from '../apiClient';
 
 // Simple notification service using polling instead of SSE
 class SimpleNotificationService {
@@ -53,8 +53,13 @@ class SimpleNotificationService {
     try {
       const now = new Date();
       
-      // Import API client dynamically to avoid circular dependencies
-      const { api } = await import('../apiClient');
+      // Vérifier si un token existe avant de faire des requêtes
+      const token = tokenManager.getToken();
+      if (!token) {
+        console.warn('⚠️ Pas de token disponible, arrêt du polling');
+        this.stopPolling();
+        return;
+      }
       
       // Get unread count
       const countResponse = await api.get<{ count: number }>('/notifications/unread-count');
@@ -76,7 +81,14 @@ class SimpleNotificationService {
         this.setAdaptivePolling();
         this.lastAdaptiveCheck = now;
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      // Gérer spécifiquement les erreurs 401 (token expiré)
+      if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+        console.warn('⚠️ Token expiré détecté lors du polling, arrêt du service');
+        this.stopPolling();
+        return;
+      }
+      
       console.error('Error polling notifications:', error);
     }
   }
@@ -86,8 +98,6 @@ class SimpleNotificationService {
    */
   private async fetchRecentNotifications(): Promise<void> {
     try {
-      const { api } = await import('../apiClient');
-      
       const response = await api.get<{ data: Notification[] }>('/notifications?limit=5&page=1');
       const notifications = Array.isArray(response.data) ? response.data : [];
       
@@ -95,7 +105,13 @@ class SimpleNotificationService {
       notifications.forEach((notification: Notification) => {
         this.emit('notification:new', notification);
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      // Gérer spécifiquement les erreurs 401
+      if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+        console.warn('⚠️ Token expiré lors de la récupération des notifications');
+        this.stopPolling();
+        throw error; // Propager l'erreur pour arrêter le polling
+      }
       console.error('Error fetching recent notifications:', error);
     }
   }

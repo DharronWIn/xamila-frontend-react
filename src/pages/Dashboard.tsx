@@ -29,6 +29,40 @@ import { UpgradeModal } from "@/components/ui/upgrade-modal";
 import { ChallengeCard } from "@/components/social/ChallengeCard";
 import { DebugInfo } from "@/components/DebugInfo";
 
+// Interface for the first active challenge response
+interface FirstActiveChallenge {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  targetAmount: number;
+  duration: number;
+  status: string;
+  startDate: string;
+  endDate: string;
+  rewards: string[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  collectiveTarget: number;
+  collectiveCurrentAmount: number;
+  collectiveProgress: number;
+  isJoined?: boolean;
+  hasAbandoned?: boolean;
+  userParticipation?: unknown;
+  createdByUser?: {
+    id: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+    pictureProfilUrl?: string;
+  };
+  _count?: {
+    participants: number;
+    transactions: number;
+  };
+}
+
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -49,7 +83,7 @@ const Dashboard = () => {
   // API hooks
   const { transactions, isLoading: transactionsLoading } = useTransactions();
   const { posts, isLoading: postsLoading } = usePosts();
-  const { challenges, isLoading: challengesLoading } = useChallenges();
+  const { challenges, isLoading: challengesLoading, getFirstActiveChallenge } = useChallenges();
   const { 
     currentChallenge,
     challengeHistory,
@@ -61,6 +95,8 @@ const Dashboard = () => {
   } = useUserChallenges(user?.id || '');
   
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [firstActiveChallenge, setFirstActiveChallenge] = useState<FirstActiveChallenge | null>(null);
+  const [isLoadingFirstActive, setIsLoadingFirstActive] = useState(false);
 
   useEffect(() => {
     console.log('Dashboard: Loading data...', { 
@@ -79,6 +115,31 @@ const Dashboard = () => {
       getUserChallengeStats();
     }
   }, [user?.id, user, getCurrentChallenge, getChallengeHistory, getUserChallengeStats, challenges?.length, currentChallenge, posts?.length, transactions?.length]);
+
+  // Load first active challenge
+  useEffect(() => {
+    const loadFirstActiveChallenge = async () => {
+      try {
+        setIsLoadingFirstActive(true);
+        const challenge = await getFirstActiveChallenge();
+        console.log('Dashboard: First active challenge loaded:', challenge);
+
+        // Convert to FirstActiveChallenge format
+        if (challenge) {
+          setFirstActiveChallenge(challenge as unknown as FirstActiveChallenge);
+        } else {
+          setFirstActiveChallenge(null);
+        }
+      } catch (error) {
+        console.error('Failed to load first active challenge:', error);
+        setFirstActiveChallenge(null);
+      } finally {
+        setIsLoadingFirstActive(false);
+      }
+    };
+
+    loadFirstActiveChallenge();
+  }, [getFirstActiveChallenge]);
 
   const isPremium = user?.isPremium || user?.isAdmin || false;
 
@@ -492,7 +553,7 @@ const Dashboard = () => {
             <CardContent className="p-6 text-center">
               <Trophy className="w-12 h-12 text-primary/60 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                Aucun challenge actif
+                Rejoignez un challenge d'épargne 6 mois c'est 6 mois
               </h3>
               <p className="text-gray-600 mb-6">
                 Rejoignez un challenge d'épargne pour commencer votre parcours d'épargne motivant !
@@ -513,6 +574,153 @@ const Dashboard = () => {
                   <FileText className="w-4 h-4 mr-2" />
                   Consulter les ressources
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* First Active Challenge Section */}
+      {firstActiveChallenge && (
+        <motion.div variants={fadeInUp} className="mb-8">
+          <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <Trophy className="w-6 h-6 text-blue-600" />
+                  <span>Challenge Actif Disponible</span>
+                </CardTitle>
+                <Badge className="bg-blue-600 text-white">
+                  <Users className="w-3 h-3 mr-1" />
+                  {firstActiveChallenge?._count?.participants || 0} participants
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {firstActiveChallenge.title || 'Challenge d\'épargne'}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {firstActiveChallenge.description || 'Défi d\'épargne collectif'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="outline" className="text-green-600 border-green-200">
+                      ACTIF
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Collective Progress */}
+                <div className="space-y-2 bg-white/50 p-4 rounded-lg">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Progression collective</span>
+                    <span className="font-bold">
+                      {(firstActiveChallenge.collectiveProgress || 0).toFixed(1)}%
+                    </span>
+                  </div>
+                  <Progress 
+                    value={firstActiveChallenge.collectiveProgress || 0} 
+                    className="h-3" 
+                  />
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>
+                      {(firstActiveChallenge.collectiveCurrentAmount || 0).toLocaleString()}€ collectés
+                    </span>
+                    <span>
+                      Objectif: {(firstActiveChallenge.collectiveTarget || firstActiveChallenge.targetAmount || 0).toLocaleString()}€
+                    </span>
+                  </div>
+                </div>
+
+                {/* Challenge Info */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {(firstActiveChallenge.collectiveCurrentAmount || 0).toLocaleString()}€
+                    </div>
+                    <div className="text-xs text-gray-500">Collecté</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-600">
+                      {(firstActiveChallenge.collectiveTarget || firstActiveChallenge.targetAmount || 0).toLocaleString()}€
+                    </div>
+                    <div className="text-xs text-gray-500">Objectif</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {firstActiveChallenge._count?.participants || 0}
+                    </div>
+                    <div className="text-xs text-gray-500">Participants</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {firstActiveChallenge.duration || 30}
+                    </div>
+                    <div className="text-xs text-gray-500">Jours</div>
+                  </div>
+                </div>
+
+                {/* Creator Info */}
+                {firstActiveChallenge.createdByUser && (
+                  <div className="flex items-center space-x-2 pt-2 border-t border-gray-200">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Users className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500">Créé par</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {firstActiveChallenge.createdByUser.firstName} {firstActiveChallenge.createdByUser.lastName}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Rewards */}
+                {firstActiveChallenge.rewards && firstActiveChallenge.rewards.length > 0 && (
+                  <div className="pt-2">
+                    <p className="text-xs text-gray-500 mb-2">Récompenses:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {firstActiveChallenge.rewards.map((reward: string, index: number) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {reward}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => window.location.href = `/user-dashboard/challenges`}
+                    >
+                      <Trophy className="w-4 h-4 mr-2" />
+                      Voir les détails
+                    </Button>
+                    {!firstActiveChallenge.isJoined && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.location.href = `/user-dashboard/challenges`}
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Rejoindre le challenge
+                      </Button>
+                    )}
+                    {firstActiveChallenge.isJoined && (
+                      <Badge className="bg-green-100 text-green-800">
+                        Vous êtes déjà inscrit
+                      </Badge>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

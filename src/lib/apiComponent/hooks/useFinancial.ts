@@ -4,10 +4,21 @@ import {
   Transaction,
   CreateTransactionDto,
   UpdateTransactionDto,
+  CreateTransactionResponse,
   TransactionStatsDto,
   TransactionChartDataDto,
-  TransactionQueryParams
+  TransactionQueryParams,
+  FluxBalanceDto,
+  FluxSummaryDto,
+  FluxToggleDto,
+  FluxToggleResponseDto,
+  FluxChartByCategoryDto,
+  CategoriesResponseDto,
+  CategoriesWithTypeResponseDto,
+  INCOME_CATEGORIES,
+  EXPENSE_CATEGORIES
 } from '../types';
+import { getCategoriesByType } from '../../../constants/financialCategories';
 import { financialEndpoints } from '../endpoints';
 
 // ==================== FINANCIAL HOOKS ====================
@@ -45,14 +56,17 @@ export const useTransactions = () => {
     }
   }, []);
 
-  const createTransaction = useCallback(async (transactionData: CreateTransactionDto): Promise<Transaction> => {
+  const createTransaction = useCallback(async (transactionData: CreateTransactionDto): Promise<CreateTransactionResponse> => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await api.post<Transaction, CreateTransactionDto>(financialEndpoints.createTransaction, transactionData);
+      const response = await api.post<CreateTransactionResponse, CreateTransactionDto>(
+        financialEndpoints.createTransaction, 
+        transactionData
+      );
       
-      // Add to local state
-      setTransactions(prev => [response, ...(prev || [])]);
+      // Add transaction to local state
+      setTransactions(prev => [response.transaction, ...(prev || [])]);
       return response;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create transaction');
@@ -193,5 +207,154 @@ export const useTransactionStats = () => {
     getStats,
     getChartData,
     getCategories,
+  };
+};
+
+// ==================== FLUX FINANCIER HOOKS ====================
+
+export const useFluxFinancier = () => {
+  const [fluxBalance, setFluxBalance] = useState<FluxBalanceDto | null>(null);
+  const [fluxSummary, setFluxSummary] = useState<FluxSummaryDto | null>(null);
+  const [chartByCategory, setChartByCategory] = useState<FluxChartByCategoryDto | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Méthode pour mettre à jour directement l'état avec les nouvelles données
+  const updateFluxData = useCallback((balance: FluxBalanceDto, summary: FluxSummaryDto) => {
+    setFluxBalance(balance);
+    setFluxSummary(summary);
+  }, []);
+
+  const getFluxBalance = useCallback(async (): Promise<FluxBalanceDto> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get<FluxBalanceDto>(financialEndpoints.fluxBalance);
+      
+      setFluxBalance(response);
+      return response;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch flux balance');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getFluxSummary = useCallback(async (): Promise<FluxSummaryDto> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get<FluxSummaryDto>(financialEndpoints.fluxSummary);
+      
+      setFluxSummary(response);
+      return response;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch flux summary');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getChartByCategory = useCallback(async (): Promise<FluxChartByCategoryDto> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get<FluxChartByCategoryDto>(financialEndpoints.fluxChartByCategory);
+      
+      setChartByCategory(response);
+      return response;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch chart by category');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const toggleFlux = useCallback(async (enabled: boolean): Promise<FluxToggleResponseDto> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.post<FluxToggleResponseDto, FluxToggleDto>(
+        financialEndpoints.fluxToggle,
+        { enabled }
+      );
+      
+      return response;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle flux');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    fluxBalance,
+    fluxSummary,
+    chartByCategory,
+    isLoading,
+    error,
+    getFluxBalance,
+    getFluxSummary,
+    getChartByCategory,
+    toggleFlux,
+    updateFluxData,
+  };
+};
+
+export const useCategories = () => {
+  const [categories, setCategories] = useState<CategoriesResponseDto | null>(null);
+  const [categoriesWithType, setCategoriesWithType] = useState<CategoriesWithTypeResponseDto | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const getCategories = useCallback(async (): Promise<CategoriesResponseDto> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get<CategoriesResponseDto>(financialEndpoints.categories);
+      
+      setCategories(response);
+      return response;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch categories');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getCategoriesWithType = useCallback(async (): Promise<CategoriesWithTypeResponseDto> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get<CategoriesWithTypeResponseDto>(financialEndpoints.categoriesWithType);
+      
+      setCategoriesWithType(response);
+      return response;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch categories with type');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Helper function to get categories by type (using imported function)
+  const getCategoriesByTypeHelper = useCallback((type: 'INCOME' | 'EXPENSE'): string[] => {
+    return getCategoriesByType(type);
+  }, []);
+
+  return {
+    categories,
+    categoriesWithType,
+    isLoading,
+    error,
+    getCategories,
+    getCategoriesWithType,
+    getCategoriesByType: getCategoriesByTypeHelper,
   };
 };

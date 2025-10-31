@@ -30,6 +30,7 @@ export const MediaPlayer = ({ src, type, title, onClose, thumbnail }: MediaPlaye
 
   // Vérifier si c'est une URL YouTube
   const isYouTubeUrl = (url: string): boolean => {
+    if (typeof url !== 'string') return false;
     return url.includes('youtube.com') || url.includes('youtu.be');
   };
 

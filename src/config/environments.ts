@@ -15,6 +15,7 @@ export interface EnvironmentConfig {
 // Fonction pour obtenir l'URL API depuis les variables d'environnement
 function getApiUrl(env: Environment): string {
   const envVar = `VITE_API_URL_${env.toUpperCase().substring(0, 3)}`;
+  console.log(envVar)
   const url = (import.meta as any).env?.[envVar];
   
   if (url) {
@@ -24,7 +25,7 @@ function getApiUrl(env: Environment): string {
   
   // URLs par défaut si les variables d'environnement ne sont pas définies
   const defaultUrls = {
-    development: 'http://localhost:3007/api',
+    development: 'http://localhost:3007/api/v1',
     preproduction: 'https://preprod-api.ay-ecampus.com/api',
     production: 'https://xamila-app-backend-nestjs.onrender.com/api',
   };

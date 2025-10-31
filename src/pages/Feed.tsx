@@ -3,16 +3,14 @@ import { useState, useEffect, useCallback } from "react";
 import {
   MessageCircle, Plus,
   Filter,
-  Search, Trophy,
-  Target,
+  Search, Target,
   Lightbulb,
   HelpCircle,
   PartyPopper,
   TrendingUp
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePosts } from "@/lib/apiComponent/hooks/useSocial";
@@ -23,10 +21,9 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { PostCreateModal } from "@/components/social/PostCreateModal";
 import { PostCard } from "@/components/social/PostCard";
 import { CommentModal } from "@/components/social/CommentModal";
-import { ChallengeCard } from "@/components/challenges/ChallengeCard";
 import PostSkeleton from "@/components/social/PostSkeleton";
-import PaginationStats from "@/components/social/PaginationStats";
 import NetworkError from "@/components/social/NetworkError";
+import { PartnerAdvertisement } from "@/components/ads/PartnerAdvertisement";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -87,6 +84,39 @@ const Feed = () => {
   const [filterType, setFilterType] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
 
+  // Publicités partenaires
+  const partnerAds = [
+    {
+      id: "1",
+      title: "Épargnez intelligemment avec Orange Money",
+      description: "Rejoignez des millions d'utilisateurs pour vos transactions et votre épargne",
+      imageUrl: "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=400&h=300&fit=crop",
+      partnerName: "Orange Money",
+      linkUrl: "https://www.orange.ci/money/",
+      badge: "Partenaire Premium",
+      type: "service" as const,
+    },
+    {
+      id: "2",
+      title: "Services bancaires adaptés à vos besoins",
+      description: "Découvrez nos solutions d'épargne et d'investissement personnalisées",
+      imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop",
+      partnerName: "Banque Partenaire",
+      linkUrl: "#",
+      badge: "Nouveau",
+      type: "product" as const,
+    },
+    {
+      id: "3",
+      title: "Application mobile pour gérer votre budget",
+      description: "Suivez vos dépenses et atteignez vos objectifs financiers facilement",
+      imageUrl: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=300&fit=crop",
+      partnerName: "App Finance",
+      linkUrl: "#",
+      type: "product" as const,
+    },
+  ];
+
   // Setup infinite scroll
   const { loadingRef } = useInfiniteScroll({
     hasNext: pagination.hasNext,
@@ -108,8 +138,8 @@ const Feed = () => {
     refreshPosts();
     
     // Load challenges
-    loadChallenges();
-  }, [refreshPosts, loadChallenges]);
+    //loadChallenges();
+  }, [refreshPosts]);
 
   // Refresh posts when filter changes
   useEffect(() => {
@@ -248,7 +278,7 @@ const Feed = () => {
   console.log('Feed render:', { posts: posts || [], challenges: apiChallenges || [], postsLoading, filteredPosts });
 
   return (
-    <div className="p-6">
+    <div className="p-1">
       {/* Debug Info */}
       {/* <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
         <h3 className="font-bold">Debug Info:</h3>
@@ -472,82 +502,20 @@ const Feed = () => {
 
         {/* Sidebar */}
         <motion.div variants={fadeInUp} className="space-y-6">
-          {/* Challenges */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Trophy className="w-5 h-5 text-primary" />
-                <span>Challenge</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {challengesLoading ? (
-                <div className="space-y-3">
-                  {[...Array(2)].map((_, i) => (
-                    <div key={i} className="animate-pulse">
-                      <div className="h-32 bg-gray-200 rounded-lg"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : (apiChallenges || []).slice(0, 2).map((challenge) => {
-                const savingsChallenge = convertApiChallengeToSavingsChallenge(challenge);
-                
-                // Vérifier si l'utilisateur a rejoint ce challenge
-                const isJoined = typedCurrentChallenge?.id === challenge.id || 
-                                savingsChallenge.isJoined
-                
-                // Vérifier si l'utilisateur a abandonné ce challenge
-                const hasAbandoned = savingsChallenge.userParticipation?.status === 'ABANDONED';
-                
-                return (
-                  <ChallengeCard
-                    key={challenge.id}
-                    challenge={savingsChallenge}
-                    onGoToMyChallenge={handleGoToMyChallenge}
-                    onViewCollectiveProgress={handleViewCollectiveProgress}
-                    showJoinButton={true}
-                    isJoined={isJoined}
-                    hasAbandoned={hasAbandoned}
-                  />
-                );
-              })}
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => window.location.href = '/user-dashboard/challenges'}
+          {/* Publicités partenaires */}
+          <div className="space-y-4">
+            
+            {partnerAds.map((ad, index) => (
+              <motion.div
+                key={ad.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
               >
-                Voir tous les défis
-              </Button>
-            </CardContent>
-          </Card>
-
-
-          {/* Quick Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <span>Vos statistiques</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <PaginationStats
-                currentPage={pagination.page}
-                totalPages={pagination.totalPages}
-                totalPosts={posts?.length || 0}
-                hasNext={pagination.hasNext}
-                isLoading={isLoadingMore}
-              />
-              
-              <div className="pt-4 border-t">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Défis rejoints</span>
-                  <Badge variant="outline">0</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
+                <PartnerAdvertisement ad={ad} />
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       </div>
 

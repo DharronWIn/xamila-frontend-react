@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api, apiClient } from '../apiClient';
-import { authEndpoints as endpoints, paymentEndpoints } from '../endpoints';
+import { api, apiClient, tokenManager } from '../apiClient';
+import { authEndpoints as endpoints, paymentEndpoints, userEndpoints } from '../endpoints';
 import {
-    LoginDto, LoginResponse,
-    User, ForgotPasswordDto,
-    ResetPasswordDto,
-    ChangePasswordDto,
-    UpdateProfileDto,
-    OtpLoginDto
+  LoginDto, LoginResponse,
+  User, ForgotPasswordDto,
+  ResetPasswordDto,
+  ChangePasswordDto,
+  UpdateProfileDto,
+  OtpLoginDto
 } from '../types';
 import { SubscriptionPlan } from '@/types/subscription';
+
+import { useContext } from 'react';
+import { AuthContext, AuthContextType } from '@/contexts/AuthContext';
 
 // ==================== NEW INTERFACES ====================
 
@@ -18,7 +21,7 @@ export interface RegisterRequest {
   email: string;
   firstName: string;
   lastName: string;
-  gender: "masculin" | "feminin";
+  gender: "M" | "F" | "Autre";
   ageRange: string;
   
   // Contact et localisation
@@ -158,11 +161,28 @@ const saveAuthState = (user: User | null, isAuthenticated: boolean) => {
 };
 
 export const useAuth = () => {
-  // Initialize with stored state if available
+  // Always try to use AuthContext first (new centralized system)
+  // useContext must be called unconditionally (React rules)
+  let contextAuth: AuthContextType | undefined = undefined;
+  try {
+    const contextValue = useContext(AuthContext);
+    // Only use if it's actually provided (not the default undefined)
+    if (contextValue !== undefined) {
+      contextAuth = contextValue;
+    }
+  } catch {
+    // AuthContext not available in this tree, will use fallback
+    contextAuth = undefined;
+  }
+
+  // Always declare hooks (React rules)
   const initialAuthState = getInitialAuthState();
-  const [user, setUser] = useState<User | null>(initialAuthState?.user || globalAuthState.user);
-  const [isLoading, setIsLoading] = useState(globalAuthState.isLoading);
-  const [isAuthenticated, setIsAuthenticated] = useState(initialAuthState?.isAuthenticated || globalAuthState.isAuthenticated);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Use context if available and initialized
+  const useContextAuth = contextAuth !== undefined && contextAuth.initialized !== undefined;
 
   const checkAuthStatus = useCallback(async () => {
     // If already checking, wait for the existing promise
@@ -184,7 +204,6 @@ export const useAuth = () => {
     }
 
     // Check if we have a token first
-    const { tokenManager } = await import('../apiClient');
     const token = tokenManager.getToken();
     
     if (!token) {
@@ -246,12 +265,45 @@ export const useAuth = () => {
     }
   }, []);
 
-  // Check authentication status on mount
+  // Check authentication status on mount - only if needed
+  // BUT: Skip if using AuthContext (which handles auth check centrally)
   useEffect(() => {
+    // If using context, don't check here - context handles it
+    if (contextAuth !== undefined && contextAuth.initialized !== undefined) {
+      // Sync state with context but don't trigger check
+      setUser(contextAuth.user);
+      setIsAuthenticated(contextAuth.isAuthenticated);
+      setIsLoading(contextAuth.isLoading);
+      return;
+    }
+
+    // Fallback system: Only check if needed
+    const now = Date.now();
+    const hasRecentCheck = globalAuthState.lastCheck && (now - globalAuthState.lastCheck) < 30000;
+    const hasValidState = globalAuthState.user && globalAuthState.isAuthenticated;
+    const hasToken = tokenManager.getToken();
+    
+    // Only check if:
+    // 1. We don't have a recent check (within 30 seconds)
+    // 2. OR we don't have a valid state but we have a token
+    // 3. OR there's already a check in progress (to sync state)
+    if (!hasRecentCheck || (!hasValidState && hasToken) || globalAuthState.checkPromise) {
     checkAuthStatus();
-  }, [checkAuthStatus]);
+    } else {
+      // Use cached state without API call
+      setUser(globalAuthState.user);
+      setIsAuthenticated(globalAuthState.isAuthenticated);
+      setIsLoading(false);
+    }
+  }, [checkAuthStatus, contextAuth]);
 
   const login = useCallback(async (loginData: LoginDto): Promise<LoginResponse> => {
+    // If using context, delegate to context login
+    if (useContextAuth && contextAuth) {
+      return contextAuth.login(loginData);
+    }
+
+    // Fallback: use old system
     const response = await api.post<LoginResponse, LoginDto>(
       endpoints.login,
       loginData,
@@ -260,7 +312,6 @@ export const useAuth = () => {
     
     // Gérer les tokens
     if (response.accessToken) {
-      const { tokenManager } = await import('../apiClient');
       tokenManager.setTokens(response.accessToken, response.refreshToken);
     }
     
@@ -272,7 +323,7 @@ export const useAuth = () => {
     setUser(response.user);
     setIsAuthenticated(true);
     return response;
-  }, []);
+  }, [useContextAuth, contextAuth]);
 
 
   const resendOtp = useCallback(async (target: string) => {
@@ -329,6 +380,11 @@ export const useAuth = () => {
     return response;
   }, []);
 
+  const getPublicProfile = useCallback(async (userId: string) => {
+    const response = await api.get(userEndpoints.profilePublic(userId));
+    return response;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       // Clear global state
@@ -344,8 +400,15 @@ export const useAuth = () => {
       saveAuthState(null, false);
       
       // Clear tokens from storage
-      const { tokenManager } = await import('../apiClient');
       tokenManager.clearTokens();
+      
+      // Clear Zustand auth store from localStorage
+      try {
+        localStorage.removeItem('auth-storage');
+        console.log('🧹 Zustand auth store nettoyé');
+      } catch (storageError) {
+        console.warn('Erreur lors du nettoyage du Zustand store:', storageError);
+      }
       
       // Optionally call logout endpoint if it exists
       // await api.post(endpoints.logout);
@@ -504,7 +567,6 @@ export const useAuth = () => {
 
   const getFineoPayCheckoutLink = useCallback(async (data: { userId: string; amount: number }): Promise<FineoPayCheckoutResponse> => {
     // Récupérer le token d'authentification
-    const { tokenManager } = await import('../apiClient');
     const authToken = tokenManager.getToken();
     
     const response = await apiClient<FineoPayCheckoutResponse, { userId: string; amount: number }>(
@@ -520,22 +582,34 @@ export const useAuth = () => {
     return response;
   }, []);
 
+  // If using context, use context values; otherwise use local state
+  const finalUser = useContextAuth && contextAuth ? contextAuth.user : user;
+  const finalIsLoading = useContextAuth && contextAuth ? contextAuth.isLoading : isLoading;
+  const finalIsAuthenticated = useContextAuth && contextAuth ? contextAuth.isAuthenticated : isAuthenticated;
+  const finalLogin = useContextAuth && contextAuth ? contextAuth.login : login;
+  const finalLogout = useContextAuth && contextAuth ? contextAuth.logout : logout;
+  const finalCheckAuthStatus = useContextAuth && contextAuth ? (contextAuth.checkAuthStatus || (async () => {})) : checkAuthStatus;
+
   return {
-    // State
-    user,
-    isLoading,
-    isAuthenticated,
+    // State (from context if available, otherwise from local state)
+    user: finalUser,
+    isLoading: finalIsLoading,
+    isAuthenticated: finalIsAuthenticated,
     
     // Actions
-    login,
+    login: finalLogin,
+    logout: finalLogout,
+    checkAuthStatus: finalCheckAuthStatus,
+    refreshAuth: useContextAuth && contextAuth ? (contextAuth.refreshAuth || (async () => {})) : (async () => {}),
+    
+    // Additional methods (always use fallback implementations)
     resendOtp,
     forgotPassword,
     resetPassword,
     changePassword,
     updateProfile,
     getProfile,
-    logout,
-    checkAuthStatus,
+    getPublicProfile,
     
     // OTP Flow
     sendOtp,
@@ -591,10 +665,34 @@ export const useProfile = () => {
 // ==================== AUTH STATUS HOOK ====================
 
 export const useAuthStatus = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(globalAuthState.isAuthenticated);
+  const [isLoading, setIsLoading] = useState(false);
 
   const checkAuth = useCallback(async () => {
+    // If already checking, wait for the existing promise
+    if (globalAuthState.checkPromise) {
+      await globalAuthState.checkPromise;
+      setIsAuthenticated(globalAuthState.isAuthenticated);
+      setIsLoading(false);
+      return;
+    }
+
+    // If checked recently (within 30 seconds), use cached data
+    const now = Date.now();
+    if (globalAuthState.lastCheck && (now - globalAuthState.lastCheck) < 30000) {
+      setIsAuthenticated(globalAuthState.isAuthenticated);
+      setIsLoading(false);
+      return;
+    }
+
+    // Check if we have a token first
+    const token = tokenManager.getToken();
+    if (!token) {
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const response = await api.get<{ isAuthenticated: boolean }>(
@@ -602,15 +700,34 @@ export const useAuthStatus = () => {
         { isPublicRoute: true }
       );
       setIsAuthenticated(response.isAuthenticated);
+      globalAuthState.isAuthenticated = response.isAuthenticated;
+      globalAuthState.lastCheck = now;
     } catch {
       setIsAuthenticated(false);
+      globalAuthState.isAuthenticated = false;
+      globalAuthState.lastCheck = now;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    const now = Date.now();
+    const hasRecentCheck = globalAuthState.lastCheck && (now - globalAuthState.lastCheck) < 30000;
+    const hasToken = tokenManager.getToken();
+    
+    // Only check if we don't have a recent check and we have a token
+    if (!hasRecentCheck && hasToken) {
     checkAuth();
+    } else if (hasRecentCheck) {
+      // Use cached state without API call
+      setIsAuthenticated(globalAuthState.isAuthenticated);
+      setIsLoading(false);
+    } else {
+      // No token, not authenticated
+      setIsAuthenticated(false);
+      setIsLoading(false);
+    }
   }, [checkAuth]);
 
   return {

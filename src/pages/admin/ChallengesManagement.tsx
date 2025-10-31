@@ -65,6 +65,9 @@ const ChallengesManagement = () => {
     createChallenge,
     updateChallenge,
     deleteChallenge,
+    toggleChallengeActive,
+    getChallengeParticipants,
+    getChallengeTransactions,
   } = useAdminChallenges();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -443,7 +446,26 @@ const ChallengesManagement = () => {
                             }}
                                 >
                                   <Eye className="w-4 h-4 mr-2" />
-                                  Voir details
+                                  Voir détails
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                            onClick={async () => {
+                              try {
+                                await toggleChallengeActive(challenge.id);
+                                toast.success(`Challenge ${challenge.isActive ? 'désactivé' : 'activé'} avec succès`);
+                                await getChallenges({
+                                  page: pagination.page,
+                                  limit: pagination.limit,
+                                  sortBy: sortBy as ChallengeQueryParams['sortBy'],
+                                  sortOrder,
+                                });
+                              } catch (error) {
+                                toast.error('Erreur lors de la modification du statut');
+                              }
+                            }}
+                                >
+                                  <Target className="w-4 h-4 mr-2" />
+                                  {challenge.isActive ? 'Désactiver' : 'Activer'}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
                             onClick={() => {
@@ -596,6 +618,7 @@ function CreateChallengeForm({ onSubmit, onCancel, isLoading = false }: CreateCh
   const [formData, setFormData] = useState<CreateChallengeRequest>({
     title: "",
     description: "",
+    challengeRule: "",
     startDate: "",
     endDate: "",
     rewards: [],
@@ -646,6 +669,17 @@ function CreateChallengeForm({ onSubmit, onCancel, isLoading = false }: CreateCh
             setFormData({ ...formData, description: e.target.value })
           }
           required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="challengeRule">Règles du challenge</Label>
+        <Textarea
+          id="challengeRule"
+          placeholder="Décrivez ici les règles et conditions du challenge..."
+          value={formData.challengeRule}
+          onChange={(e) => setFormData({ ...formData, challengeRule: e.target.value })}
+          className="min-h-[120px]"
         />
       </div>
 
@@ -753,6 +787,7 @@ function EditChallengeForm({
   const [formData, setFormData] = useState<UpdateChallengeRequest>({
     title: challenge?.title || "",
     description: challenge?.description || "",
+    challengeRule: (challenge as any)?.challengeRule || "",
     startDate: challenge?.startDate || "",
     endDate: challenge?.endDate || "",
     rewards: challenge?.rewards || [],
@@ -804,6 +839,17 @@ function EditChallengeForm({
           onChange={(e) =>
             setFormData({ ...formData, description: e.target.value })
           }
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="challengeRule">Règles du challenge</Label>
+        <Textarea
+          id="challengeRule"
+          placeholder="Règles et conditions du challenge"
+          value={formData.challengeRule}
+          onChange={(e) => setFormData({ ...formData, challengeRule: e.target.value })}
+          className="min-h-[120px]"
         />
       </div>
 

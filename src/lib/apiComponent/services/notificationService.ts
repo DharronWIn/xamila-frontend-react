@@ -1,4 +1,5 @@
 import { Notification } from '../types';
+import { api } from '../apiClient';
 
 // Browser-compatible EventEmitter implementation
 class EventEmitter {
@@ -109,9 +110,6 @@ export class NotificationService extends EventEmitter {
    */
   private async pollNotifications(): Promise<void> {
     try {
-      // Import API client dynamically to avoid circular dependencies
-      const { api } = await import('../apiClient');
-      
       // Get unread count
       const countResponse = await api.get<{ count: number }>('/notifications/unread-count');
       const count = countResponse.count || 0;
@@ -135,9 +133,6 @@ export class NotificationService extends EventEmitter {
    */
   private async fetchRecentNotifications(): Promise<void> {
     try {
-      // Import API client dynamically to avoid circular dependencies
-      const { api } = await import('../apiClient');
-      
       const response = await api.get<{ data: Notification[] }>('/notifications?limit=5&page=1');
       const notifications = response.data || [];
       

@@ -1,6 +1,7 @@
 import { ZodSchema } from "zod";
 import { getApiBaseUrl, isDebugMode } from "../../config/environment-configuration";
 import { toast } from "../../hooks/use-toast";
+import { authEndpoints } from "./endpoints";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -107,8 +108,6 @@ export const tokenManager = {
         console.log("🔄 Tentative de rafraîchissement du token...");
       }
       
-      // Importer endpoints de manière dynamique pour éviter les dépendances circulaires
-      const { authEndpoints } = await import('./endpoints');
       console.log("🔄 URL de rafraîchissement du token:", buildApiUrl(authEndpoints.refreshToken));
       
       const response = await fetch(buildApiUrl(authEndpoints.refreshToken), {
@@ -200,20 +199,28 @@ async function handleTokenExpiration(): Promise<void> {
   // Si le refresh a échoué, nettoyer tous les tokens
   tokenManager.clearTokens();
   
-  // Afficher un message à l'utilisateur
+  // Nettoyer le localStorage (auth store)
+  try {
+    localStorage.removeItem('auth-storage');
+    console.log('🧹 LocalStorage auth nettoyé');
+  } catch (error) {
+    console.warn('Erreur lors du nettoyage du localStorage:', error);
+  }
+  
+  // Afficher un message à l'utilisateur (une seule fois)
   toast({
     title: "Session expirée",
-    description: "Votre session a expiré. Vous allez être redirigé vers la page de connexion.",
+    description: "Votre session a expiré. Veuillez vous reconnecter.",
     variant: "destructive"
   });
   
   // Rediriger vers la page de connexion après un court délai
   setTimeout(() => {
     // Vérifier si on est déjà sur la page de connexion pour éviter une redirection inutile
-    if (window.location.pathname !== '/') {
+    if (window.location.pathname !== '/' && !window.location.pathname.startsWith('/login')) {
       window.location.href = '/';
     }
-  }, 2000);
+  }, 1500);
 }
 
 /**

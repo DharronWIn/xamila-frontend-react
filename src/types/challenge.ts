@@ -4,6 +4,7 @@ export interface SavingsChallenge {
   id: string;
   title: string;
   description: string;
+  challengeRule?: string;
   type: 'monthly' | 'weekly' | 'daily' | 'custom';
   targetAmount: number;
   duration: number; // en jours
@@ -53,6 +54,7 @@ export interface ChallengeTransaction {
   id: string;
   challengeId: string;
   participantId: string;
+  userId?: string; // ID de l'utilisateur qui a fait la transaction
   amount: number;
   type: 'deposit' | 'withdrawal';
   description: string;

@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { SavingsChallenge } from '@/types/challenge';
 
 interface GoalFormData {
@@ -64,6 +65,7 @@ export const ChallengeJoinModal = ({
     endDate: challenge?.endDate || new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [acceptedRules, setAcceptedRules] = useState(false);
 
   // Mock bank accounts - dans une vraie app, ceci viendrait du store
   const bankAccounts = [
@@ -121,8 +123,20 @@ export const ChallengeJoinModal = ({
   };
 
   const handleNext = () => {
-    if (step === 1 && validateForm()) {
+    if (step === 1) {
+      if (!acceptedRules) {
+        setErrors({ ...errors, rules: "Vous devez accepter les règles du challenge" });
+        return;
+      }
+      setErrors(prev => {
+        const { rules, ...rest } = prev;
+        return rest;
+      });
       setStep(2);
+      return;
+    }
+    if (step === 2 && validateForm()) {
+      setStep(3);
     }
   };
 
@@ -141,6 +155,7 @@ export const ChallengeJoinModal = ({
 
   const handleClose = () => {
     setStep(1);
+    setAcceptedRules(false);
     setFormData({
       mode: 'free',
       bankAccountId: '',
@@ -196,7 +211,7 @@ export const ChallengeJoinModal = ({
             </CardContent>
           </Card>
 
-          {/* Step 1: Goal Setting */}
+          {/* Step 1: Rules reading and acceptance */}
           {step === 1 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -204,7 +219,32 @@ export const ChallengeJoinModal = ({
               className="space-y-6"
             >
               <div>
-                <h3 className="text-lg font-semibold mb-4">1. Configuration de votre objectif d'épargne</h3>
+                <h3 className="text-lg font-semibold mb-4">1. Lisez et acceptez les règles</h3>
+                <div className="border rounded-lg p-4 bg-gray-50 max-h-60 overflow-auto whitespace-pre-wrap text-sm">
+                  {challenge.challengeRule ? challenge.challengeRule : "Aucune règle fournie pour ce challenge."}
+                </div>
+                <div className="flex items-start space-x-2 mt-3">
+                  <Checkbox id="acceptRules" checked={acceptedRules} onCheckedChange={(v) => setAcceptedRules(!!v)} />
+                  <Label htmlFor="acceptRules" className="text-sm leading-5">
+                    J’ai lu et j’accepte les règles du challenge
+                  </Label>
+                </div>
+                {errors.rules && (
+                  <p className="text-sm text-red-500 mt-1">{errors.rules}</p>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 2: Goal Setting */}
+          {step === 2 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="space-y-6"
+            >
+              <div>
+                <h3 className="text-lg font-semibold mb-4">2. Configuration de votre objectif d'épargne</h3>
                 
                 <div className="space-y-6">
                   {/* Devise et Type de revenus */}
@@ -392,15 +432,15 @@ export const ChallengeJoinModal = ({
             </motion.div>
           )}
 
-          {/* Step 2: Confirmation */}
-          {step === 2 && (
+          {/* Step 3: Confirmation */}
+          {step === 3 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="space-y-4"
             >
               <div>
-                <h3 className="text-lg font-semibold mb-4">2. Confirmez votre participation</h3>
+                <h3 className="text-lg font-semibold mb-4">3. Confirmez votre participation</h3>
                 
                 <Card className="bg-gray-50">
                   <CardContent className="p-4 space-y-3">
@@ -479,13 +519,13 @@ export const ChallengeJoinModal = ({
           <div className="flex justify-between pt-4">
             <Button
               variant="outline"
-              onClick={step === 1 ? handleClose : () => setStep(1)}
+              onClick={step === 1 ? handleClose : () => setStep(step - 1)}
             >
               {step === 1 ? 'Annuler' : 'Retour'}
             </Button>
             
-            {step === 1 ? (
-              <Button onClick={handleNext} disabled={isLoading}>
+            {step < 3 ? (
+              <Button onClick={handleNext} disabled={isLoading || (step === 1 && !acceptedRules)}>
                 Continuer
               </Button>
             ) : (

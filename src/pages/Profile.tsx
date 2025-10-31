@@ -1,14 +1,15 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import {
-    Edit3,
-    Settings,
-    Trophy,
-    Target,
+  Edit3,
+  Settings,
+  Trophy,
+  Target,
   MessageCircle, Calendar, Crown,
-    Star,
+  Star,
   Users, Award, Camera, DollarSign,
-  Activity, Zap, Share2, Check
+  Activity, Zap, Share2, Check,
+  FileText
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,9 +20,13 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
 import { usePosts } from "@/lib/apiComponent/hooks/useSocial";
 import { useTransactions } from "@/lib/apiComponent/hooks/useFinancial";
+import { useGamification } from "@/lib/apiComponent/hooks/useGamification";
 import AvatarManager from "@/components/profile/AvatarManager";
 import ChangePasswordModal from "@/components/profile/ChangePasswordModal";
 import EditProfileModal from "@/components/profile/EditProfileModal";
+import { LevelWidget } from "@/components/gamification/LevelWidget";
+import { TrophiesTab } from "@/components/gamification/TrophiesTab";
+import { LeaderboardTab } from "@/components/gamification/LeaderboardTab";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -41,6 +46,7 @@ const Profile = () => {
   const { user: userProfile, isLoading: authLoading, getProfile } = useAuth();
   const { posts = [], isLoading: postsLoading } = usePosts();
   const { transactions = [], isLoading: transactionsLoading } = useTransactions();
+  const { getMyTrophies, getTrophiesProgress, loading: gamificationLoading } = useGamification();
 
   const [isAvatarManagerOpen, setIsAvatarManagerOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -53,7 +59,13 @@ const Profile = () => {
     if (!userProfile && !authLoading) {
       getProfile();
     }
-  }, [userProfile, authLoading, getProfile]);
+    
+    // Charger les données de gamification
+    if (userProfile) {
+      getMyTrophies();
+      getTrophiesProgress();
+    }
+  }, [userProfile, authLoading, getProfile, getMyTrophies, getTrophiesProgress]);
 
   // Données simulées pour les challenges et amis (en attendant les vrais hooks)
   const challenges = [];
@@ -110,7 +122,7 @@ const Profile = () => {
   const progressPercentage = currentGoal ? (currentGoal.currentAmount / currentGoal.targetAmount) * 100 : 0;
 
   // État de chargement global
-  const isLoading = postsLoading || transactionsLoading || authLoading;
+  const isLoading = postsLoading || transactionsLoading || authLoading || gamificationLoading;
 
   if (isLoading) {
     return (
@@ -214,6 +226,14 @@ const Profile = () => {
                     <Button 
                       variant="outline" 
                       className="flex items-center gap-2"
+                      onClick={() => window.location.href = '/user-dashboard/resources'}
+                    >
+                      <FileText className="w-4 h-4" />
+                      Mes Ressources
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center gap-2"
                       onClick={() => setIsChangePasswordOpen(true)}
                     >
                   <Settings className="w-4 h-4" />
@@ -282,13 +302,20 @@ const Profile = () => {
           </Card>
       </motion.div>
 
+          {/* Widget Gamification */}
+          <motion.div variants={fadeInUp}>
+            <LevelWidget variant="default" clickable={true} />
+          </motion.div>
+
           {/* Contenu principal avec onglets */}
           <motion.div variants={fadeInUp}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
+              <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-6">
               <TabsTrigger value="overview">Aperçu</TabsTrigger>
                 <TabsTrigger value="activity">Activité</TabsTrigger>
                 <TabsTrigger value="achievements">Succès</TabsTrigger>
+                <TabsTrigger value="trophies">Trophées</TabsTrigger>
+                <TabsTrigger value="leaderboard">Classement</TabsTrigger>
                 <TabsTrigger value="social">Social</TabsTrigger>
             </TabsList>
 
@@ -416,6 +443,14 @@ const Profile = () => {
                     </div>
             </CardContent>
           </Card>
+              </TabsContent>
+
+              <TabsContent value="trophies" className="space-y-6">
+                <TrophiesTab />
+              </TabsContent>
+
+              <TabsContent value="leaderboard" className="space-y-6">
+                <LeaderboardTab />
               </TabsContent>
 
               <TabsContent value="social" className="space-y-6">

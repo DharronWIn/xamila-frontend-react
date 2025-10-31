@@ -77,15 +77,17 @@ const AchievementsCard = ({ achievements, isLoading }: AchievementsCardProps) =>
           <span>Succès Collectifs</span>
         </CardTitle>
         <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <span>{achievements.unlockedAchievements} / {achievements.totalAchievements} débloqués</span>
+          <span>
+            {achievements.unlockedAchievements || 0} / {achievements.totalAchievements || 0} débloqués
+          </span>
           <Badge variant="outline" className="text-xs">
-            {achievements.completionRate}% complété
+            {achievements.completionRate || 0}% complété
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {achievements.achievements.map((achievement, index) => (
+          {(achievements.achievements || []).map((achievement, index) => (
             <motion.div
               key={achievement.id}
               initial={{ opacity: 0, scale: 0.9 }}

@@ -45,6 +45,7 @@ const UserDetail = () => {
     approveAndUpgradeToPremium,
     toggleUserActive,
     toggleUserVerified,
+    regenerateUserAccess,
   } = useAdminUsers();
 
   const [user, setUser] = useState<UserResponse | null>(null);
@@ -113,6 +114,10 @@ const UserDetail = () => {
           await toggleUserVerified(user.id);
           setUser({ ...user, isVerified: !user.isVerified });
           toast.success(`Utilisateur ${user.isVerified ? 'dévérifié' : 'vérifié'}`);
+          break;
+        case 'regenerateAccess':
+          await regenerateUserAccess(user.id);
+          toast.success("Identifiants régénérés avec succès. Un email a été envoyé à l'utilisateur.");
           break;
         case 'delete':
           await deleteUser(user.id);
@@ -490,6 +495,18 @@ const UserDetail = () => {
                             {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Rejeter"}
                           </Button>
                         </>
+                      )}
+                      
+                      {/* Régénérer les identifiants - disponible pour les utilisateurs approuvés */}
+                      {user.approvalStatus === "APPROVED" && user.email && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleAction('regenerateAccess')}
+                          disabled={isUpdating}
+                        >
+                          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Régénérer les identifiants"}
+                        </Button>
                       )}
                       
                       {/* Actions premium - disponibles pour tous les utilisateurs non-premium */}

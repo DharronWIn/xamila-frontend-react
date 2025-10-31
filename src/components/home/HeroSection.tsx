@@ -1,19 +1,15 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
-  Target,
-  TrendingUp,
-  Shield,
-  FileText,
+  Target, FileText,
   BarChart3,
   Users,
   Crown,
   CreditCard, PiggyBank,
   Trophy,
-  CheckCircle,
-  Smartphone,
-  DollarSign, Settings,
+  CheckCircle, DollarSign, Settings,
   Phone,
   Home
 } from "lucide-react";
@@ -21,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RegistrationModal } from "@/components/home/RegistrationModal";
-import heroImage from "@/assets/hero-savings.jpg";
+import heroImage from "@/assets/challenge-epargne.png";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 60 },
@@ -39,19 +35,19 @@ const staggerContainer = {
 
 const heroFeatures = [
   {
+    icon: PiggyBank,
+    title: "Epargne productive",
+    description: "Accédez à un compte bancaire dédié ou des produits financiers intéressants",
+  },
+  {
     icon: Target,
-    title: "Objectifs personnalisés",
-    description: "Fixez vos objectifs d'épargne selon vos revenus",
+    title: "Discipline financière",
+    description: "Améliorez la gestion de vos ressources grâce à nos ressources pensées pour vous",
   },
   {
-    icon: TrendingUp,
-    title: "Suivi intelligent",
-    description: "Visualisez votre progression en temps réel",
-  },
-  {
-    icon: Shield,
-    title: "Sécurisé & fiable",
-    description: "Vos données financières sont protégées",
+    icon: Users,
+    title: "Elan communautaire",
+    description: "Bénéficiez de la force du groupe pour aller plus loin que vous n'aurez été seul",
   },
 ];
 
@@ -116,57 +112,99 @@ const mainFeatures = [
   },
 ];
 
-const premiumFeatures = [
+const pricingFeatures = [
   {
-    icon: Crown,
-    title: "GRATUIT",
-    price: 0,
-    period: "pour toujours",
-    description: "Commencez votre parcours d'épargne",
-    popular: false,
-    color: "from-gray-500 to-gray-600",
-    bgGradient: "from-gray-50 to-gray-100",
-    textColor: "text-gray-900",
-    items: [
-      "Accès aux ressources de base",
-      "Suivi simple de l'épargne",
-      "Communauté d'entraide",
-      "Guides gratuits",
-      "Support par email",
-    ],
-    buttonText: "Commencer gratuitement",
-    buttonVariant: "outline" as const,
+    feature: "Ouverture de compte sur le site",
+    standard: true,
+    premium: true,
   },
   {
-    icon: Smartphone,
-    title: "PREMIUM",
-    price: 10000,
-    period: "par mois",
-    description: "Accès complet à toutes les fonctionnalités",
-    popular: true,
-    color: "from-primary to-primary/80",
-    bgGradient: "from-primary/5 to-primary/10",
-    textColor: "text-primary",
-    items: [
-      "Challenge d'épargne personnalisé",
-      "Analyse financière avancée",
-      "Classement et compétition",
-      "Certificats de réussite",
-      "Support prioritaire 24/7",
-      "Méthodes de paiement locales",
-      "Orange Money, MTN, Moov",
-      "Wave Money",
-      "Cartes Visa/Mastercard",
-    ],
-    buttonText: "Choisir Premium",
-    buttonVariant: "default" as const,
+    feature: "Participation aux challenges épargne",
+    standard: true,
+    premium: true,
+  },
+  {
+    feature: "Participation aux défis épargne (spécialisés)",
+    standard: false,
+    premium: true,
+  },
+  {
+    feature: "Ouverture de compte bancaire (épargne)",
+    standard: true,
+    premium: true,
+  },
+  {
+    feature: "Forum",
+    standard: true,
+    premium: true,
+  },
+  {
+    feature: "Application de suivi des finances personnelles",
+    standard: false,
+    premium: true,
+  },
+  {
+    feature: "Accès au plan épargne Niveau 1",
+    standard: false,
+    premium: true,
+  },
+  {
+    feature: "Charte de l'épargnant personnalisée",
+    standard: false,
+    premium: true,
+  },
+  {
+    feature: "Certificat d'engagement au challenge personnalisé",
+    standard: false,
+    premium: true,
+  },
+  {
+    feature: "Carte d'adhérent à la Communauté des Epargnants",
+    standard: false,
+    premium: true,
+  },
+  {
+    feature: "Certificat de réussite au challenge épargne",
+    standard: false,
+    premium: true,
+  },
+  {
+    feature: "Première séance de 30 mn de coaching personnalisé",
+    standard: true,
+    premium: true,
+  },
+  {
+    feature: "Webinaires",
+    standard: "Limité",
+    premium: true,
+  },
+  {
+    feature: "Ressources vidéos",
+    standard: "Limité",
+    premium: true,
+  },
+  {
+    feature: "Ressources audios",
+    standard: "Limité",
+    premium: true,
+  },
+  {
+    feature: "Ressources documentaires",
+    standard: "Limité",
+    premium: true,
+  },
+  {
+    feature: "Séance de coaching personnalisé de 30 mn",
+    standard: "20 000 FCFA",
+    premium: "15 000 FCFA",
   },
 ];
 
 const stats = [
-  { label: "Participants actifs", value: "1,247+", icon: Users },
-  { label: "Objectifs atteints", value: "89%", icon: Target },
-  { label: "Épargne moyenne", value: "2,450€", icon: DollarSign },
+  { label: "Inscrits sur la plateforme", value: "1,247+", icon: Users },
+  { label: "Challenges", value: "89+", icon: Target },
+  { label: "Objectifs atteints", value: "78%", icon: CheckCircle },
+  { label: "Épargne mobilisée", value: "2,450,000 FCFA", icon: DollarSign },
   { label: "Satisfaction", value: "4.8/5", icon: Trophy },
 ];
 
@@ -181,6 +219,8 @@ interface HomePageProps {
 }
 
 export function HeroSection({ onGetStarted }: HeroSectionProps) {
+  const navigate = useNavigate();
+  
   const scrollToInscription = () => {
     const element = document.getElementById('inscription');
     if (element) {
@@ -188,16 +228,19 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
     }
   };
 
+  const goToRegistration = () => {
+    navigate('/registration');
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-hero">
-      {/* Background Image with Overlay */}
+      {/* Background Image without Filter */}
       <div className="absolute inset-0 z-0">
         <img
           src={heroImage}
           alt="Financial growth concept"
-          className="w-full h-full object-cover opacity-20"
+          className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-hero/90" />
       </div>
 
       {/* Animated Background Elements */}
@@ -237,20 +280,16 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             variants={fadeInUp}
             className="text-5xl md:text-7xl font-bold text-white mb-6"
           >
-            Xamila
-            {/* <span className="block bg-gradient-to-r from-white to-accent-light bg-clip-text text-transparent">
-              d'Épargne
-            </span> */}
+            Relevez le challenge !
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p
             variants={fadeInUp}
-            className="text-xl md:text-2xl text-white/90 mb-12 max-w-2xl mx-auto leading-relaxed"
+            className="text-xl md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed"
           >
-            Transformez votre relation à l'argent avec un défi d'épargne sur 6
-            mois. Atteignez vos objectifs financiers avec notre accompagnement
-            personnalisé.
+            Epargnez pendant 6 mois, 10% de tout ce qui vous passera dans les mains, 
+            et apprenez à faire fructifier votre épargne, en toute sécurité
           </motion.p>
 
           {/* CTA Buttons */}
@@ -261,20 +300,19 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             <Button
               variant="hero"
               size="xl"
-              //onClick={onGetStarted}
               className="group"
             >
-              En savoir plus
-              {/* <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /> */}
+              Télécharger la brochure
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
 
             <Button
               variant="glass"
               size="xl"
-              onClick={scrollToInscription}
+              onClick={goToRegistration}
               className="text-white hover:text-foreground"
             >
-              Je suis intéressé
+              Remplir le formulaire
             </Button>
           </motion.div>
 
@@ -331,8 +369,13 @@ export function HomePage({
   isAuthenticated,
   onGoToDashboard,
 }: HomePageProps) {
+  const navigate = useNavigate();
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+
+  const goToRegistration = () => {
+    navigate('/registration');
+  };
 
   const handlePlanSelection = (planType: string) => {
     setSelectedPlan(planType);
@@ -367,7 +410,7 @@ export function HomePage({
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-8">
             {stats.map((stat, index) => (
               <motion.div
                 key={stat.label}
@@ -511,119 +554,72 @@ export function HomePage({
               <Crown className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Choisissez votre forfait
+              FORFAITS
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-              Commencez gratuitement ou débloquez toutes les fonctionnalités avec Premium
+              Comparez nos offres Standard et Premium
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {premiumFeatures.map((plan, index) => (
-              <motion.div
-                key={plan.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.2, duration: 0.6 }}
-                viewport={{ once: true }}
-                whileHover={{ 
-                  y: -8,
-                  transition: { duration: 0.3, ease: "easeOut" }
-                }}
-                className="group relative"
-              >
-                {/* Popular Badge */}
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
-                    <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-4 py-1 text-sm font-semibold shadow-lg">
-                      <Crown className="w-4 h-4 mr-1" />
-                      Le plus populaire
-                    </Badge>
-                  </div>
-                )}
-
-                <Card className={`h-full overflow-hidden border-2 transition-all duration-300 ${
-                  plan.popular 
-                    ? 'border-primary shadow-2xl bg-white' 
-                    : 'border-gray-200 shadow-lg hover:shadow-xl bg-white/80 backdrop-blur-sm'
-                } group-hover:shadow-2xl`}>
-                  
-                  {/* Header */}
-                  <div className={`p-8 text-center ${plan.bgGradient}`}>
-                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 bg-gradient-to-r ${plan.color} text-white shadow-lg`}>
-                      <plan.icon className="w-8 h-8" />
-                    </div>
-                    
-                    <h3 className={`text-2xl font-bold mb-2 ${plan.textColor}`}>
-                      {plan.title}
-                    </h3>
-                    
-                    <p className="text-gray-600 mb-6">
-                      {plan.description}
-                    </p>
-
-                    {/* Pricing */}
-                    <div className="mb-6">
-                      <div className="flex items-baseline justify-center">
-                        <span className={`text-5xl font-bold ${plan.textColor}`}>
-                          {plan.price === 0 ? 'Gratuit' : `${plan.price.toLocaleString()}`}
-                        </span>
-                        {plan.price > 0 && (
-                          <span className="text-gray-500 ml-2 text-lg">
-                            XOF
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-gray-500 text-sm mt-1">
-                        {plan.period}
-                      </p>
-                    </div>
-
-                    {/* CTA Button */}
-                    <Button
-                      variant={plan.buttonVariant}
-                      size="lg"
-                      onClick={() => handlePlanSelection(plan.title)}
-                      className={`w-full group-hover:scale-105 transition-all duration-300 ${
-                        plan.popular
-                          ? 'bg-gradient-to-r from-primary to-primary/80 text-white hover:from-primary/90 hover:to-primary/70'
-                          : `border-2 ${plan.color.replace('from-', 'border-').replace(' to-', '-')} text-gray-700 hover:bg-gradient-to-r hover:text-white ${plan.color}`
+          <div className="max-w-6xl mx-auto">
+            <div className="overflow-x-auto">
+              <table className="w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+                <thead className="bg-gradient-to-r from-primary to-primary/80 text-white">
+                  <tr>
+                    <th className="px-6 py-4 text-left font-semibold">Fonctionnalités</th>
+                    <th className="px-6 py-4 text-center font-semibold">Standard</th>
+                    <th className="px-6 py-4 text-center font-semibold">Premium</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pricingFeatures.map((item, index) => (
+                    <motion.tr
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                      viewport={{ once: true }}
+                      className={`border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200 ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                       }`}
                     >
-                      {plan.buttonText}
-                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                    </Button>
-                  </div>
-
-                  {/* Features */}
-                  <div className="p-8">
-                    <h4 className="font-semibold text-gray-900 mb-4 text-center">
-                      Ce qui est inclus :
-                    </h4>
-                    <ul className="space-y-3">
-                      {plan.items.map((item, i) => (
-                        <motion.li
-                          key={i}
-                          className="flex items-start text-sm text-gray-700"
-                          initial={{ opacity: 0, x: -20 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.1, duration: 0.3 }}
-                          viewport={{ once: true }}
-                        >
-                          <motion.div
-                            className="mr-3 flex-shrink-0 mt-0.5"
-                            whileHover={{ scale: 1.2 }}
-                          >
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                          </motion.div>
-                          <span className="font-medium">{item}</span>
-                        </motion.li>
-                      ))}
-                    </ul>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        {item.feature}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {item.standard === true ? (
+                          <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
+                        ) : item.standard === false ? (
+                          <div className="w-5 h-5 mx-auto"></div>
+                        ) : (
+                          <span className="text-sm text-gray-600 font-medium">{item.standard}</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {item.premium === true ? (
+                          <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
+                        ) : item.premium === false ? (
+                          <div className="w-5 h-5 mx-auto"></div>
+                        ) : (
+                          <span className="text-sm text-gray-600 font-medium">{item.premium}</span>
+                        )}
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-gray-100">
+                  <tr>
+                    <td className="px-6 py-4 text-lg font-bold text-gray-900">Prix</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-2xl font-bold text-gray-900">Gratuit</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-2xl font-bold text-primary">10 000 FCFA/AN</span>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
         </div>
       </section>
@@ -651,30 +647,30 @@ export function HomePage({
             {[
               {
                 step: "1",
-                title: "Inscription",
+                title: "Pré-inscription",
                 description:
-                  "Remplissez le formulaire détaillé pour personnaliser votre expérience",
+                  "Remplissez le formulaire pour ouvrir votre compte sur le site",
                 icon: Users,
               },
               {
                 step: "2",
                 title: "Validation",
                 description:
-                  "Votre demande est examinée et vous recevez vos accès par email",
+                  "Après validation, vous recevrez vos accès par email et vous pourrez vous connecter sur le site",
                 icon: CheckCircle,
               },
               {
                 step: "3",
-                title: "Configuration",
+                title: "Immersion",
                 description:
-                  "Définissez votre objectif d'épargne basé sur vos revenus",
+                  "Découvrez les fonctionnalités du site et testez les, ouvrez votre compte d'épargne par exemple !",
                 icon: Target,
               },
               {
                 step: "4",
-                title: "Challenge",
+                title: "Inscrivez vous au challenge",
                 description:
-                  "Suivez votre progression pendant 6 mois et atteignez vos objectifs",
+                  "Inscrivez vous au challenge d'épargne disponible et suivez votre progression ainsi que celle du groupe",
                 icon: Trophy,
               },
             ].map((step, index) => (
@@ -867,7 +863,7 @@ export function HomePage({
                     <Button
                       variant="secondary"
                       size="lg"
-                      onClick={onGetStarted}
+                      onClick={goToRegistration}
                       className="relative group bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 border-0"
                     >
                       <motion.span

@@ -36,8 +36,64 @@ import {
   ChallengeStats,
   ChallengeDetails,
   ChallengeParticipant,
-  UpdateResourceRequest, ResourceStats,
-  ApiResponse
+  UpdateResourceRequest,
+  ResourceStats,
+  ApiResponse,
+  BankAccountApplication,
+  NotificationResponse,
+  SocialPost,
+  SocialPostQueryParams, UpdateSocialPostRequest,
+  SocialComment,
+  SocialCommentQueryParams,
+  SocialStats,
+  Defi,
+  CreateDefiRequest,
+  UpdateDefiRequest,
+  DefiQueryParams,
+  DefisListResponse,
+  DefiStats,
+  DefiParticipant,
+  FinancialTransaction,
+  FinancialTransactionQueryParams,
+  FinancialTransactionsListResponse,
+  FinancialTransactionStats,
+  UpdateFinancialTransactionRequest,
+  FinancialGlobalFlux,
+  SavingsGoal,
+  SavingsGoalQueryParams, UpdateSavingsGoalRequest,
+  SavingsChallenge,
+  SavingsStats,
+  Trophy,
+  CreateTrophyRequest,
+  UpdateTrophyRequest,
+  TrophyQueryParams,
+  TrophiesListResponse,
+  Badge,
+  CreateBadgeRequest,
+  UpdateBadgeRequest,
+  BadgeQueryParams,
+  BadgesListResponse,
+  GamificationUserData,
+  GamificationStats,
+  GamificationLeaderboardEntry,
+  FineoPayPayment,
+  FineoPayPaymentQueryParams,
+  FineoPayPaymentsListResponse,
+  FineoPayPaymentStats,
+  FineoPayPaymentsByStatusParams,
+  FineoPayRevenueQuery,
+  FineoPayRevenue,
+  Subscription,
+  SubscriptionQueryParams,
+  SubscriptionsListResponse,
+  SubscriptionStats,
+  ExtendSubscriptionRequest,
+  SubscriptionRevenueQuery,
+  SubscriptionRevenue,
+  CoachingRequest,
+  CoachingRequestQueryParams,
+  CoachingRequestsListResponse,
+  UpdateCoachingRequestStatusRequest
 } from '../../../types/admin';
 
 // ==================== ADMIN AUTHENTICATION HOOKS ====================
@@ -401,6 +457,27 @@ export const useAdminUsers = () => {
     }
   }, []);
 
+  const regenerateUserAccess = useCallback(async (id: string): Promise<UserResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.users.regenerateUserAccess(id);
+      // Mettre à jour l'utilisateur dans la liste locale
+      setUsers(prev => prev.map(user => 
+        user.id === id 
+          ? { ...user, ...response }
+          : user
+      ));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la régénération des identifiants';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     users,
     isLoading,
@@ -417,7 +494,8 @@ export const useAdminUsers = () => {
     approveUser,
     rejectUser,
     upgradeUserToPremium,
-    approveAndUpgradeToPremium
+    approveAndUpgradeToPremium,
+    regenerateUserAccess
   };
 };
 
@@ -556,7 +634,7 @@ export const useAdminSystemSettings = () => {
 // ==================== BANK ACCOUNTS HOOKS ====================
 
 export const useAdminBankAccounts = () => {
-  const [applications, setApplications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<BankAccountApplication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
@@ -605,7 +683,7 @@ export const useAdminBankAccounts = () => {
     }
   }, []);
 
-  const approveApplication = useCallback(async (id: string): Promise<any> => {
+  const approveApplication = useCallback(async (id: string): Promise<ApiResponse> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -622,7 +700,7 @@ export const useAdminBankAccounts = () => {
     }
   }, []);
 
-  const rejectApplication = useCallback(async (id: string, data: ReviewBankAccountRequest): Promise<any> => {
+  const rejectApplication = useCallback(async (id: string, data: ReviewBankAccountRequest): Promise<ApiResponse> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -654,7 +732,7 @@ export const useAdminBankAccounts = () => {
 // ==================== NOTIFICATIONS HOOKS ====================
 
 export const useAdminNotifications = () => {
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
@@ -849,55 +927,17 @@ export const useAdminResources = () => {
 // ==================== ADMIN SAVINGS GOALS HOOKS ====================
 
 export const useAdminSavingsGoals = () => {
-  const [savingsGoals, setSavingsGoals] = useState<any[]>([]);
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getSavingsGoals = useCallback(async (): Promise<any[]> => {
+  const getSavingsGoals = useCallback(async (query?: SavingsGoalQueryParams): Promise<SavingsGoal[]> => {
     try {
       setIsLoading(true);
       setError(null);
-      // Pour l'instant, retourner des données mock en attendant l'implémentation backend
-      const mockGoals = [
-        {
-          id: '1',
-          userId: '1',
-          userName: 'Marie Dupont',
-          userEmail: 'marie@example.com',
-          targetAmount: 5000,
-          currentAmount: 2500,
-          currency: 'EUR',
-          monthlyIncome: 3000,
-          isVariableIncome: false,
-          startDate: '2025-01-01',
-          targetDate: '2025-12-31',
-          status: 'active',
-          category: 'vacation',
-          description: 'Vacances d\'été',
-          createdAt: '2025-01-01T00:00:00Z',
-          updatedAt: '2025-01-20T00:00:00Z'
-        },
-        {
-          id: '2',
-          userId: '2',
-          userName: 'Jean Martin',
-          userEmail: 'jean@example.com',
-          targetAmount: 10000,
-          currentAmount: 7500,
-          currency: 'EUR',
-          monthlyIncome: 4000,
-          isVariableIncome: true,
-          startDate: '2024-06-01',
-          targetDate: '2025-06-01',
-          status: 'active',
-          category: 'house',
-          description: 'Achat d\'une maison',
-          createdAt: '2024-06-01T00:00:00Z',
-          updatedAt: '2025-01-20T00:00:00Z'
-        }
-      ];
-      setSavingsGoals(mockGoals);
-      return mockGoals;
+      const response = await adminService.savings.getSavingsGoals(query);
+      setSavingsGoals(response.goals);
+      return response.goals;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des objectifs d\'épargne';
       setError(errorMessage);
@@ -907,20 +947,12 @@ export const useAdminSavingsGoals = () => {
     }
   }, []);
 
-  const getSavingsGoalStats = useCallback(async (): Promise<any> => {
+  const getSavingsGoalStats = useCallback(async (): Promise<SavingsStats> => {
     try {
       setIsLoading(true);
       setError(null);
-      // Pour l'instant, retourner des stats mock
-      const mockStats = {
-        totalGoals: 150,
-        activeGoals: 120,
-        completedGoals: 25,
-        totalAmount: 500000,
-        averageGoalAmount: 3333,
-        completionRate: 0.75
-      };
-      return mockStats;
+      const response = await adminService.savings.getSavingsStats();
+      return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des statistiques';
       setError(errorMessage);
@@ -930,13 +962,13 @@ export const useAdminSavingsGoals = () => {
     }
   }, []);
 
-  const updateSavingsGoal = useCallback(async (id: string, data: any): Promise<any> => {
+  const updateSavingsGoal = useCallback(async (id: string, data: UpdateSavingsGoalRequest): Promise<SavingsGoal> => {
     try {
       setIsLoading(true);
       setError(null);
-      // Pour l'instant, simuler une mise à jour
-      setSavingsGoals(prev => prev.map(goal => goal.id === id ? { ...goal, ...data } : goal));
-      return { ...data, id };
+      const response = await adminService.savings.updateSavingsGoal(id, data);
+      setSavingsGoals(prev => prev.map(goal => goal.id === id ? response : goal));
+      return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour de l\'objectif';
       setError(errorMessage);
@@ -946,14 +978,71 @@ export const useAdminSavingsGoals = () => {
     }
   }, []);
 
-  const deleteSavingsGoal = useCallback(async (id: string): Promise<any> => {
+  const deleteSavingsGoal = useCallback(async (id: string): Promise<ApiResponse> => {
     try {
       setIsLoading(true);
       setError(null);
+      const response = await adminService.savings.deleteSavingsGoal(id);
       setSavingsGoals(prev => prev.filter(goal => goal.id !== id));
-      return { success: true };
+      return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression de l\'objectif';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getSavingsGoalById = useCallback(async (id: string): Promise<SavingsGoal | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.savings.getSavingsGoalById(id);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération de l\'objectif';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getSavingsChallenges = useCallback(async (query?: SavingsGoalQueryParams): Promise<SavingsChallenge[]> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.savings.getSavingsChallenges(query);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des challenges';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getSavingsChallengeById = useCallback(async (id: string): Promise<SavingsChallenge | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.savings.getSavingsChallengeById(id);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du challenge';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getCollectiveProgress = useCallback(async (): Promise<unknown> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.savings.getCollectiveProgress();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du progrès';
       setError(errorMessage);
       throw err;
     } finally {
@@ -966,55 +1055,30 @@ export const useAdminSavingsGoals = () => {
     isLoading,
     error,
     getSavingsGoals,
+    getSavingsGoalById,
     getSavingsGoalStats,
     updateSavingsGoal,
-    deleteSavingsGoal
+    deleteSavingsGoal,
+    getSavingsChallenges,
+    getSavingsChallengeById,
+    getCollectiveProgress
   };
 };
 
 // ==================== ADMIN SOCIAL MANAGEMENT HOOKS ====================
 
 export const useAdminSocial = () => {
-  const [posts, setPosts] = useState<any[]>([]);
-  const [challenges, setChallenges] = useState<any[]>([]);
+  const [posts, setPosts] = useState<SocialPost[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getPosts = useCallback(async (): Promise<any[]> => {
+  const getPosts = useCallback(async (query?: SocialPostQueryParams): Promise<SocialPost[]> => {
     try {
       setIsLoading(true);
       setError(null);
-      // Pour l'instant, retourner des données mock en attendant l'implémentation backend
-      const mockPosts = [
-        {
-          id: '1',
-          userId: '1',
-          userName: 'Marie Dupont',
-          userEmail: 'marie@example.com',
-          content: 'J\'ai atteint mon objectif d\'épargne de 1000€ ! 🎉',
-          type: 'achievement',
-          likes: 15,
-          comments: 3,
-          shares: 2,
-          createdAt: '2025-01-20T10:30:00Z',
-          status: 'published'
-        },
-        {
-          id: '2',
-          userId: '2',
-          userName: 'Jean Martin',
-          userEmail: 'jean@example.com',
-          content: 'Conseil du jour : Épargnez 10% de vos revenus chaque mois',
-          type: 'tip',
-          likes: 8,
-          comments: 1,
-          shares: 5,
-          createdAt: '2025-01-19T14:20:00Z',
-          status: 'published'
-        }
-      ];
-      setPosts(mockPosts);
-      return mockPosts;
+      const response = await adminService.social.getPosts(query);
+      setPosts(response.posts);
+      return response.posts;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des posts';
       setError(errorMessage);
@@ -1024,37 +1088,14 @@ export const useAdminSocial = () => {
     }
   }, []);
 
-  const getChallenges = useCallback(async (): Promise<any[]> => {
+  const getComments = useCallback(async (query?: SocialCommentQueryParams): Promise<SocialComment[]> => {
     try {
       setIsLoading(true);
       setError(null);
-      // Pour l'instant, retourner des données mock
-      const mockChallenges = [
-        {
-          id: '1',
-          title: 'Défi 30 jours sans dépenses inutiles',
-          description: 'Évitez les achats impulsifs pendant 30 jours',
-          participants: 25,
-          status: 'active',
-          startDate: '2025-01-01',
-          endDate: '2025-01-31',
-          createdAt: '2024-12-15T00:00:00Z'
-        },
-        {
-          id: '2',
-          title: 'Épargne de 500€ en un mois',
-          description: 'Atteignez 500€ d\'épargne en un mois',
-          participants: 18,
-          status: 'completed',
-          startDate: '2024-12-01',
-          endDate: '2024-12-31',
-          createdAt: '2024-11-15T00:00:00Z'
-        }
-      ];
-      setChallenges(mockChallenges);
-      return mockChallenges;
+      const response = await adminService.social.getComments(query);
+      return response;
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des défis';
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des commentaires';
       setError(errorMessage);
       throw err;
     } finally {
@@ -1062,19 +1103,12 @@ export const useAdminSocial = () => {
     }
   }, []);
 
-  const getSocialStats = useCallback(async (): Promise<any> => {
+  const getSocialStats = useCallback(async (): Promise<SocialStats> => {
     try {
       setIsLoading(true);
       setError(null);
-      // Pour l'instant, retourner des stats mock
-      const mockStats = {
-        totalPosts: 150,
-        totalChallenges: 25,
-        activeChallenges: 8,
-        totalParticipants: 200,
-        engagementRate: 0.75
-      };
-      return mockStats;
+      const response = await adminService.social.getSocialStats();
+      return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des statistiques';
       setError(errorMessage);
@@ -1084,12 +1118,13 @@ export const useAdminSocial = () => {
     }
   }, []);
 
-  const deletePost = useCallback(async (postId: string): Promise<any> => {
+  const deletePost = useCallback(async (postId: string): Promise<ApiResponse> => {
     try {
       setIsLoading(true);
       setError(null);
+      const response = await adminService.social.deletePost(postId);
       setPosts(prev => prev.filter(post => post.id !== postId));
-      return { success: true };
+      return response;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression du post';
       setError(errorMessage);
@@ -1099,14 +1134,74 @@ export const useAdminSocial = () => {
     }
   }, []);
 
-  const deleteChallenge = useCallback(async (challengeId: string): Promise<any> => {
+  const deleteComment = useCallback(async (commentId: string): Promise<ApiResponse> => {
     try {
       setIsLoading(true);
       setError(null);
-      setChallenges(prev => prev.filter(challenge => challenge.id !== challengeId));
-      return { success: true };
+      const response = await adminService.social.deleteComment(commentId);
+      return response;
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression du défi';
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression du commentaire';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updatePost = useCallback(async (id: string, data: UpdateSocialPostRequest): Promise<SocialPost> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.social.updatePost(id, data);
+      setPosts(prev => prev.map(post => post.id === id ? response : post));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour du post';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const togglePostVisible = useCallback(async (id: string, visible: boolean): Promise<SocialPost> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.social.togglePostVisible(id, visible);
+      setPosts(prev => prev.map(post => post.id === id ? response : post));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la modification de la visibilité';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getPostById = useCallback(async (id: string): Promise<SocialPost | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.social.getPostById(id);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du post';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getReports = useCallback(async (): Promise<unknown[]> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.social.getReports();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des signalements';
       setError(errorMessage);
       throw err;
     } finally {
@@ -1116,14 +1211,17 @@ export const useAdminSocial = () => {
 
   return {
     posts,
-    challenges,
     isLoading,
     error,
     getPosts,
-    getChallenges,
+    getPostById,
+    getComments,
     getSocialStats,
     deletePost,
-    deleteChallenge
+    deleteComment,
+    updatePost,
+    togglePostVisible,
+    getReports
   };
 };
 
@@ -1281,29 +1379,15 @@ export const useAdminChallenges = () => {
     }
   }, []);
 
-  const getChallengeLeaderboard = useCallback(async (id: string, sortBy?: string, limit?: number): Promise<ChallengeParticipant[]> => {
+  const toggleChallengeActive = useCallback(async (id: string): Promise<Challenge | null> => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await adminService.challenges.getChallengeLeaderboard(id, sortBy, limit);
+      const response = await adminService.challenges.toggleChallengeActive(id);
+      setChallenges(prev => prev.map(challenge => challenge.id === id ? response : challenge));
       return response;
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du classement';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const getChallengeProgress = useCallback(async (id: string): Promise<unknown> => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await adminService.challenges.getChallengeProgress(id);
-      return response;
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération de la progression';
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'activation/désactivation';
       setError(errorMessage);
       throw err;
     } finally {
@@ -1323,9 +1407,906 @@ export const useAdminChallenges = () => {
     createChallenge,
     updateChallenge,
     deleteChallenge,
+    toggleChallengeActive,
     getChallengeParticipants,
-    getChallengeTransactions,
-    getChallengeLeaderboard,
-    getChallengeProgress
+    getChallengeTransactions
+  };
+};
+
+// ==================== ADMIN DEFIS MANAGEMENT HOOKS ====================
+
+export const useAdminDefis = () => {
+  const [defis, setDefis] = useState<Defi[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
+
+  const getDefis = useCallback(async (query?: DefiQueryParams): Promise<DefisListResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.defis.getDefis(query);
+      setDefis(response.defis);
+      setPagination({
+        page: response.page,
+        limit: query?.limit || 10,
+        total: response.total,
+        totalPages: response.totalPages
+      });
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des défis';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getDefiStats = useCallback(async (): Promise<DefiStats | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.defis.getDefiStats();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des statistiques';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getDefiById = useCallback(async (id: string): Promise<Defi | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.defis.getDefiById(id);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du défi';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const createDefi = useCallback(async (data: CreateDefiRequest): Promise<Defi | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.defis.createDefi(data);
+      setDefis(prev => [...prev, response]);
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la création du défi';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateDefi = useCallback(async (id: string, data: UpdateDefiRequest): Promise<Defi | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.defis.updateDefi(id, data);
+      setDefis(prev => prev.map(defi => defi.id === id ? response : defi));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour du défi';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const deleteDefi = useCallback(async (id: string): Promise<ApiResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.defis.deleteDefi(id);
+      setDefis(prev => prev.filter(defi => defi.id !== id));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression du défi';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const toggleDefiOfficial = useCallback(async (id: string, isOfficial: boolean): Promise<Defi | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.defis.toggleDefiOfficial(id, isOfficial);
+      setDefis(prev => prev.map(defi => defi.id === id ? response : defi));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la modification';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateDefiStatus = useCallback(async (id: string, status: 'UPCOMING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'): Promise<Defi | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.defis.updateDefiStatus(id, status);
+      setDefis(prev => prev.map(defi => defi.id === id ? response : defi));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour du statut';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getDefiParticipants = useCallback(async (id: string): Promise<DefiParticipant[]> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.defis.getDefiParticipants(id);
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des participants';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getDefiTransactions = useCallback(async (id: string, participantId?: string): Promise<unknown[]> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.defis.getDefiTransactions(id, participantId);
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des transactions';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    defis,
+    isLoading,
+    error,
+    pagination,
+    getDefis,
+    getDefiStats,
+    getDefiById,
+    createDefi,
+    updateDefi,
+    deleteDefi,
+    toggleDefiOfficial,
+    updateDefiStatus,
+    getDefiParticipants,
+    getDefiTransactions
+  };
+};
+
+// ==================== ADMIN FINANCIAL MANAGEMENT HOOKS ====================
+
+export const useAdminFinancial = () => {
+  const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0
+  });
+
+  const getTransactions = useCallback(async (query?: FinancialTransactionQueryParams): Promise<FinancialTransactionsListResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.financial.getTransactions(query);
+      setTransactions(response.transactions);
+      setPagination({
+        page: response.page,
+        limit: query?.limit || 20,
+        total: response.total,
+        totalPages: response.totalPages
+      });
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des transactions';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getTransactionStats = useCallback(async (): Promise<FinancialTransactionStats | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.financial.getTransactionStats();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des statistiques';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getTransactionById = useCallback(async (id: string): Promise<FinancialTransaction | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.financial.getTransactionById(id);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération de la transaction';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateTransaction = useCallback(async (id: string, data: UpdateFinancialTransactionRequest): Promise<FinancialTransaction | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.financial.updateTransaction(id, data);
+      setTransactions(prev => prev.map(t => t.id === id ? response : t));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const deleteTransaction = useCallback(async (id: string): Promise<ApiResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.financial.deleteTransaction(id);
+      setTransactions(prev => prev.filter(t => t.id !== id));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getTransactionsByUser = useCallback(async (userId: string): Promise<FinancialTransaction[]> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.financial.getTransactionsByUser(userId);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getGlobalFlux = useCallback(async (): Promise<FinancialGlobalFlux | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.financial.getGlobalFlux();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du flux global';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    transactions,
+    isLoading,
+    error,
+    pagination,
+    getTransactions,
+    getTransactionStats,
+    getTransactionById,
+    updateTransaction,
+    deleteTransaction,
+    getTransactionsByUser,
+    getGlobalFlux
+  };
+};
+
+// ==================== ADMIN GAMIFICATION MANAGEMENT HOOKS ====================
+
+export const useAdminGamification = () => {
+  const [trophies, setTrophies] = useState<Trophy[]>([]);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const getTrophies = useCallback(async (query?: TrophyQueryParams): Promise<TrophiesListResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.gamification.getTrophies(query);
+      setTrophies(response.trophies);
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des trophées';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getBadges = useCallback(async (query?: BadgeQueryParams): Promise<BadgesListResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.gamification.getBadges(query);
+      setBadges(response.badges);
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des badges';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getGamificationStats = useCallback(async (): Promise<GamificationStats | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.gamification.getGamificationStats();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des statistiques';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getTrophyById = useCallback(async (id: string): Promise<Trophy | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.gamification.getTrophyById(id);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du trophée';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const createTrophy = useCallback(async (data: CreateTrophyRequest): Promise<Trophy | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.gamification.createTrophy(data);
+      setTrophies(prev => [...prev, response]);
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la création du trophée';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateTrophy = useCallback(async (id: string, data: UpdateTrophyRequest): Promise<Trophy | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.gamification.updateTrophy(id, data);
+      setTrophies(prev => prev.map(trophy => trophy.id === id ? response : trophy));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour du trophée';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const deleteTrophy = useCallback(async (id: string): Promise<ApiResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.gamification.deleteTrophy(id);
+      setTrophies(prev => prev.filter(trophy => trophy.id !== id));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression du trophée';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getBadgeById = useCallback(async (id: string): Promise<Badge | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.gamification.getBadgeById(id);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du badge';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const createBadge = useCallback(async (data: CreateBadgeRequest): Promise<Badge | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.gamification.createBadge(data);
+      setBadges(prev => [...prev, response]);
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la création du badge';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateBadge = useCallback(async (id: string, data: UpdateBadgeRequest): Promise<Badge | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.gamification.updateBadge(id, data);
+      setBadges(prev => prev.map(badge => badge.id === id ? response : badge));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour du badge';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const deleteBadge = useCallback(async (id: string): Promise<ApiResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.gamification.deleteBadge(id);
+      setBadges(prev => prev.filter(badge => badge.id !== id));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression du badge';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getUserGamificationData = useCallback(async (userId: string): Promise<GamificationUserData | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.gamification.getUserGamificationData(userId);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des données';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const deleteUserTrophy = useCallback(async (userId: string, trophyId: string): Promise<ApiResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.gamification.deleteUserTrophy(userId, trophyId);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression du trophée';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getLeaderboard = useCallback(async (limit: number = 100): Promise<GamificationLeaderboardEntry[]> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.gamification.getLeaderboard(limit);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du leaderboard';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    trophies,
+    badges,
+    isLoading,
+    error,
+    getTrophies,
+    getTrophyById,
+    createTrophy,
+    updateTrophy,
+    deleteTrophy,
+    getBadges,
+    getBadgeById,
+    createBadge,
+    updateBadge,
+    deleteBadge,
+    getUserGamificationData,
+    deleteUserTrophy,
+    getGamificationStats,
+    getLeaderboard
+  };
+};
+
+// ==================== ADMIN FINEOPAY PAYMENTS HOOKS ====================
+
+export const useAdminFineoPay = () => {
+  const [payments, setPayments] = useState<FineoPayPayment[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0
+  });
+
+  const getPayments = useCallback(async (query?: FineoPayPaymentQueryParams): Promise<FineoPayPaymentsListResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.fineopay.getPayments(query);
+      setPayments(response.payments);
+      setPagination({
+        page: response.page,
+        limit: query?.limit || 20,
+        total: response.total
+      });
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des paiements';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getPaymentStats = useCallback(async (): Promise<FineoPayPaymentStats | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.fineopay.getPaymentStats();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des statistiques';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getPaymentById = useCallback(async (id: string): Promise<FineoPayPayment | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.fineopay.getPaymentById(id);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du paiement';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getPaymentsByUser = useCallback(async (userId: string, limit: number = 50): Promise<FineoPayPayment[]> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.fineopay.getPaymentsByUser(userId, limit);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des paiements';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getPaymentsByStatus = useCallback(async (params: FineoPayPaymentsByStatusParams): Promise<FineoPayPaymentsListResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.fineopay.getPaymentsByStatus(params);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des paiements';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getRevenue = useCallback(async (query?: FineoPayRevenueQuery): Promise<FineoPayRevenue | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.fineopay.getRevenue(query);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des revenus';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getPaymentByReference = useCallback(async (reference: string): Promise<FineoPayPayment | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.fineopay.getPaymentByReference(reference);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du paiement';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    payments,
+    isLoading,
+    error,
+    pagination,
+    getPayments,
+    getPaymentStats,
+    getPaymentById,
+    getPaymentsByUser,
+    getPaymentsByStatus,
+    getRevenue,
+    getPaymentByReference
+  };
+};
+
+// ==================== ADMIN SUBSCRIPTIONS HOOKS ====================
+
+export const useAdminSubscriptions = () => {
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0
+  });
+
+  const getSubscriptions = useCallback(async (query?: SubscriptionQueryParams): Promise<SubscriptionsListResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.subscriptions.getSubscriptions(query);
+      setSubscriptions(response.subscriptions);
+      setPagination({
+        page: response.page,
+        limit: query?.limit || 20,
+        total: response.total
+      });
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des abonnements';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getSubscriptionStats = useCallback(async (): Promise<SubscriptionStats | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.subscriptions.getSubscriptionStats();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des statistiques';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getSubscriptionsByUser = useCallback(async (userId: string): Promise<Subscription[]> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.subscriptions.getSubscriptionsByUser(userId);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des abonnements';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getSubscriptionById = useCallback(async (id: string): Promise<Subscription | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.subscriptions.getSubscriptionById(id);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération de l\'abonnement';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const cancelSubscription = useCallback(async (id: string): Promise<Subscription | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.subscriptions.cancelSubscription(id);
+      setSubscriptions(prev => prev.map(sub => sub.id === id ? response : sub));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'annulation';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const extendSubscription = useCallback(async (id: string, data: ExtendSubscriptionRequest): Promise<Subscription | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.subscriptions.extendSubscription(id, data);
+      setSubscriptions(prev => prev.map(sub => sub.id === id ? response : sub));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la prolongation';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getSubscriptionRevenue = useCallback(async (query?: SubscriptionRevenueQuery): Promise<SubscriptionRevenue | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await adminService.subscriptions.getSubscriptionRevenue(query);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des revenus';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    subscriptions,
+    isLoading,
+    error,
+    pagination,
+    getSubscriptions,
+    getSubscriptionStats,
+    getSubscriptionsByUser,
+    getSubscriptionById,
+    cancelSubscription,
+    extendSubscription,
+    getSubscriptionRevenue
+  };
+};
+
+// ==================== ADMIN COACHING REQUESTS HOOKS ====================
+
+export const useAdminCoaching = () => {
+  const [requests, setRequests] = useState<CoachingRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0
+  });
+
+  const getCoachingRequests = useCallback(async (query?: CoachingRequestQueryParams): Promise<CoachingRequestsListResponse | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.coaching.getCoachingRequests(query);
+      setRequests(response.requests);
+      setPagination({
+        page: response.page,
+        limit: query?.limit || 20,
+        total: response.total
+      });
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des demandes';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateCoachingRequestStatus = useCallback(async (id: string, data: UpdateCoachingRequestStatusRequest): Promise<CoachingRequest | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.coaching.updateCoachingRequestStatus(id, data);
+      setRequests(prev => prev.map(req => req.id === id ? response : req));
+      return response;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour du statut';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    requests,
+    isLoading,
+    error,
+    pagination,
+    getCoachingRequests,
+    updateCoachingRequestStatus
   };
 };

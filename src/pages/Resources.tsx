@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  FileText,
-  Download,
-  Lock,
-  BookOpen,
+  FileText, BookOpen,
   Target, Crown,
   CheckCircle, Play,
   Headphones,
   Video, CreditCard,
-  Wallet
+  Wallet,
+  Users,
+  ChevronRight,
+  Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,10 @@ import { DocumentEngagementModal } from "@/components/certificates/DocumentEngag
 import { ChallengeSuccessModal } from "@/components/certificates/ChallengeSuccessModal";
 import { MediaPlayer } from "@/components/MediaPlayer";
 import { toast } from "sonner";
+import { educationalContentStore } from "@/store/educationalContentStore";
+import { userResourceEndpoints, coachingEndpoints } from "@/lib/apiComponent/endpoints";
+import { getApiBaseUrl } from "@/config/environment-configuration";
+import { tokenManager, api } from "@/lib/apiComponent/apiClient";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -113,6 +117,50 @@ const Resources = () => {
     motivation: ''
   });
 
+  // Coaching modal state
+  const [showCoachingModal, setShowCoachingModal] = useState(false);
+  const [isSubmittingCoaching, setIsSubmittingCoaching] = useState(false);
+  const [coachingForm, setCoachingForm] = useState({
+    topic: '',
+    preferredDate: '',
+    notes: ''
+  });
+  const openCoaching = () => setShowCoachingModal(true);
+  const closeCoaching = () => setShowCoachingModal(false);
+  const submitCoaching = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation des champs obligatoires
+    if (!coachingForm.topic.trim()) {
+      toast.error('Veuillez indiquer le sujet de votre demande');
+      return;
+    }
+    if (!coachingForm.preferredDate.trim()) {
+      toast.error('Veuillez sélectionner une date souhaitée');
+      return;
+    }
+    
+    setIsSubmittingCoaching(true);
+    try {
+      const payload = {
+        subject: coachingForm.topic.trim(),
+        message: coachingForm.notes.trim() || '—',
+        preferredTimes: coachingForm.preferredDate,
+        metadata: { lang: 'fr' },
+      };
+
+      await api.post(coachingEndpoints.create, payload);
+      toast.success('Votre demande de coaching a été envoyée');
+      setShowCoachingModal(false);
+      setCoachingForm({ topic: '', preferredDate: '', notes: '' });
+    } catch (err) {
+      console.error('Coaching request failed:', err);
+      toast.error("Impossible d'envoyer la demande de coaching");
+    } finally {
+      setIsSubmittingCoaching(false);
+    }
+  };
+
   // API hooks (not used with mock data)
   const { 
     isLoading, 
@@ -135,13 +183,13 @@ const Resources = () => {
     },
     {
       id: "2",
-      title: "Charte de l'epargnant",
+      title: "CHARTE DE L'EPARGNANT",
       description: "Definition de la charte de l'epargnant",
       type: "PDF",
       category: "Éducation",
       isPremium: false,
       downloadCount: 890,
-      url: "/documents/charte-epargne.pdf",
+      url: "/documents/charte-epargne/download",
       createdAt: "2024-01-10",
       icon: BookOpen
     },
@@ -228,7 +276,7 @@ const Resources = () => {
   ];
 
   // Use mock data instead of API
-  const categories = ["Tous", "Éducation", "Outils", "Documents", "Certificats", "Formation"];
+  const categories = ["Éducation", "Outils", "Documents", "Certificats", "Formation"];
   const resources = resourcesData;
 
   // Handle search and filtering with local data
@@ -243,8 +291,8 @@ const Resources = () => {
   });
 
 
-  // Create categories list with "Tous" option
-  const allCategories = ['Tous', ...categories];
+  // Create categories list with "Tous" option (unique)
+  const allCategories = Array.from(new Set(['Tous', ...categories]));
 
   const handleDownload = async (resource: Resource) => {
     if (resource.isPremium && !isPremium) {
@@ -358,6 +406,40 @@ const Resources = () => {
     }
   };
 
+  async function downloadCharte(): Promise<void> {
+    try {
+      const base = getApiBaseUrl();
+      const clean = userResourceEndpoints.downloadCharte.replace(/^\//, '');
+      const url = `${base}/${clean}`;
+      console.log('url to download: ', url);
+      const token = tokenManager.getToken();
+      console.log('token: ', token);
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`Download failed (${res.status})`);
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="?([^";]+)"?/i);
+      const filename = match ? match[1] : "charte-epargne.pdf";
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+      toast.success('Téléchargement lancé');
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Erreur lors du téléchargement');
+    }
+  }
+
   return (
     <motion.div
       variants={staggerContainer}
@@ -375,75 +457,7 @@ const Resources = () => {
             </p>
           </motion.div>
 
-      {/* Search and Filters */}
-      <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <Input
-            placeholder="Rechercher une ressource..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-          />
-        </div>
-        <div className="flex gap-2 overflow-x-auto">
-          {allCategories.map((category) => (
-            <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory(category)}
-              className="whitespace-nowrap"
-            >
-              {category}
-            </Button>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Stats */}
-      <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FileText className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Ressources disponibles</p>
-                <p className="text-2xl font-bold">{resources.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Accès gratuit</p>
-                <p className="text-2xl font-bold">{resources.filter(r => !r.isPremium).length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Crown className="w-5 h-5 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Contenu Premium</p>
-                <p className="text-2xl font-bold">{resources.filter(r => r.isPremium).length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      {/* Filters and stats removed as requested */}
 
       {/* Loading State */}
       {isLoading && (
@@ -467,112 +481,110 @@ const Resources = () => {
         </motion.div>
       )}
 
-      {/* Resources Grid */}
+      {/* Simple grid with 4 entries, fed by store counts */}
       {!isLoading && !error && (
-        <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredResources.map((resource, index) => {
-          const TypeIcon = getTypeIcon(resource.type);
-          const typeBadge = getTypeBadge(resource.type);
+        <motion.div variants={fadeInUp} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <button type="button" onClick={openCoaching} className="group text-left">
+            <Card className="relative h-full overflow-hidden transition-all border border-border/60 hover:border-primary/40 hover:shadow-xl rounded-xl">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-primary/10 to-transparent" />
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><Users className="w-6 h-6" /></div>
+                    <CardTitle className="text-lg">Coaching personnalisé</CardTitle>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+              </CardHeader>
+              <CardContent className="pb-5">
+                <p className="text-sm text-muted-foreground">Réservez une séance de coaching</p>
+              </CardContent>
+            </Card>
+          </button>
+
+          <button type="button" onClick={downloadCharte} className="group text-left">
+            <Card className="relative h-full overflow-hidden transition-all border border-border/60 hover:border-primary/40 hover:shadow-xl rounded-xl">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-primary/10 to-transparent" />
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* Utilisation d'une icône de document */}
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <CardTitle className="text-lg">Charte de l'épargnant</CardTitle>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+              </CardHeader>
+              <CardContent className="pb-5">
+                <p className="text-sm text-muted-foreground">Définition de la charte de l'épargnant</p>
+              </CardContent>
+            </Card>
+          </button>
+
+          <a href="/user-dashboard/resources/audios" className="group">
+            <Card className="relative h-full overflow-hidden transition-all border border-border/60 hover:border-primary/40 hover:shadow-xl rounded-xl">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-primary/10 to-transparent" />
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><Headphones className="w-6 h-6" /></div>
+                    <CardTitle className="text-lg">Audios</CardTitle>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+              </CardHeader>
+              <CardContent className="pb-5">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <p>Podcasts et contenus audio</p>
+                  <span className="rounded-full px-2.5 py-0.5 bg-primary/10 text-primary">{educationalContentStore.getAllAudios().length}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </a>
+
+          <a href="/user-dashboard/resources/documents" className="group">
+            <Card className="relative h-full overflow-hidden transition-all border border-border/60 hover:border-primary/40 hover:shadow-xl rounded-xl">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-primary/10 to-transparent" />
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><FileText className="w-6 h-6" /></div>
+                    <CardTitle className="text-lg">Documents</CardTitle>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+              </CardHeader>
+              <CardContent className="pb-5">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <p>Guides et PDF</p>
+                  <span className="rounded-full px-2.5 py-0.5 bg-primary/10 text-primary">{educationalContentStore.getAllDocuments().length}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </a>
+          <a href="/user-dashboard/resources/videos" className="group">
+            <Card className="relative h-full overflow-hidden transition-all border border-border/60 hover:border-primary/40 hover:shadow-xl rounded-xl">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-primary/10 to-transparent" />
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><Video className="w-6 h-6" /></div>
+                    <CardTitle className="text-lg">Vidéos</CardTitle>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+              </CardHeader>
+              <CardContent className="pb-5">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <p>Formations et webinaires</p>
+                  <span className="rounded-full px-2.5 py-0.5 bg-primary/10 text-primary">{educationalContentStore.getAllVideos().length}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </a>
           
-          return (
-            <motion.div
-              key={resource.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className={`h-full transition-all duration-300 hover:shadow-lg ${
-                resource.isPremium && !isPremium ? 'relative overflow-hidden' : ''
-              }`}>
-                {resource.isPremium && !isPremium && (
-                  <div className="absolute inset-0 bg-gradient-to-br from-black/5 to-black/10 backdrop-blur-[1px] z-10" />
-                )}
-                
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      {React.createElement(getResourceIcon(resource.type), { className: "w-5 h-5 text-primary" })}
-                    </div>
-                      <div className="flex-1">
-                        <Badge className={`${typeBadge.color} text-xs`}>
-                          {typeBadge.label}
-                        </Badge>
-                      </div>
-                    </div>
-                    {resource.isPremium && (
-                      <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs">
-                        <Crown className="w-3 h-3 mr-1" />
-                        Premium
-                      </Badge>
-                    )}
-                  </div>
-                  <CardTitle className="text-lg leading-tight">{resource.title}</CardTitle>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  <p className="text-gray-600 text-sm line-clamp-3">
-                    {resource.description}
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{resource.category}</span>
-                    {resource.downloadCount && <span>{resource.downloadCount} téléchargements</span>}
-                  </div>
-                  
-                  <Button 
-                    className="w-full"
-                    variant={resource.isPremium && !isPremium ? "outline" : "default"}
-                    onClick={() => handleDownload(resource)}
-                  >
-                    {resource.isPremium && !isPremium ? (
-                      <>
-                        <Lock className="w-4 h-4 mr-2" />
-                        Débloquer Premium
-                      </>
-                    ) : (
-                      <>
-                        {resource.type === 'TOOL' ? (
-                          resource.id === '3' ? (
-                            <>
-                              <Target className="w-4 h-4 mr-2" />
-                              Calculer
-                            </>
-                          ) : resource.id === '4' ? (
-                            <>
-                              <FileText className="w-4 h-4 mr-2" />
-                              Générer
-                            </>
-                          ) : resource.id === '5' ? (
-                            <>
-                              <Crown className="w-4 h-4 mr-2" />
-                              Générer
-                            </>
-                          ) : (
-                            <>
-                              <Target className="w-4 h-4 mr-2" />
-                              Utiliser
-                            </>
-                          )
-                        ) : resource.type === 'VIDEO' || resource.type === 'AUDIO' ? (
-                          <>
-                            <Play className="w-4 h-4 mr-2" />
-                            Voir la playlist
-                          </>
-                        ) : (
-                          <>
-                            <Download className="w-4 h-4 mr-2" />
-                            Télécharger
-                          </>
-                        )}
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-          })}
         </motion.div>
       )}
 
@@ -627,6 +639,86 @@ const Resources = () => {
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
       />
+
+      {/* Coaching Modal */}
+      {showCoachingModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl p-8 w-full max-w-2xl"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold">Demande de coaching personnalisé</h3>
+              <Button variant="ghost" onClick={closeCoaching} className="text-gray-500">✕</Button>
+            </div>
+            <form onSubmit={submitCoaching} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="topic">Sujet <span className="text-red-500">*</span></Label>
+                  <Input 
+                    id="topic" 
+                    className="h-11 text-base" 
+                    placeholder="Budget, Épargne, Objectifs…" 
+                    value={coachingForm.topic} 
+                    onChange={(e) => setCoachingForm({ ...coachingForm, topic: e.target.value })} 
+                    required
+                    disabled={isSubmittingCoaching}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="preferredDate">Date souhaitée <span className="text-red-500">*</span></Label>
+                  <Input 
+                    id="preferredDate" 
+                    className="h-11 text-base" 
+                    type="datetime-local" 
+                    value={coachingForm.preferredDate} 
+                    onChange={(e) => setCoachingForm({ ...coachingForm, preferredDate: e.target.value })} 
+                    required
+                    disabled={isSubmittingCoaching}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="notes">Notes (optionnel)</Label>
+                <Textarea 
+                  id="notes" 
+                  rows={6} 
+                  className="text-base" 
+                  placeholder="Expliquez vos besoins"
+                  value={coachingForm.notes}
+                  onChange={(e) => setCoachingForm({ ...coachingForm, notes: e.target.value })}
+                  disabled={isSubmittingCoaching}
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={closeCoaching}
+                  disabled={isSubmittingCoaching}
+                >
+                  Annuler
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="h-11 px-6 text-base"
+                  disabled={isSubmittingCoaching}
+                >
+                  {isSubmittingCoaching ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <span>Envoi en cours...</span>
+                    </>
+                  ) : (
+                    'Envoyer la demande'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
 
         </>
       ) : (

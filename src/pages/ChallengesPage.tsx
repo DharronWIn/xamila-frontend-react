@@ -2,13 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';
 import { motion } from 'framer-motion';
 import {
-  Trophy, Search, Target,
+  Trophy, Target,
   TrendingUp,
   Users, RefreshCw
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useChallenges, useUserChallenges, useCurrentChallengeQuery, useInvalidateCurrentChallenge } from '@/lib/apiComponent/hooks/useChallenges';
 import { Challenge } from '@/lib/apiComponent/types';
@@ -18,12 +17,16 @@ import { ChallengeJoinModal } from '@/components/challenges/ChallengeJoinModal';
 import { CurrentChallengeCard } from '@/components/challenges/CurrentChallengeCard';
 import { SavingsChallenge } from '@/types/challenge';
 import { toast } from 'sonner';
+import { useUserResources } from '@/lib/apiComponent/hooks/useUserResources';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FileText } from 'lucide-react';
 
 // Interface for the API response structure based on the user's example
 interface ApiChallengeResponse {
   id: string;
   title: string;
   description: string;
+  challengeRule: string;
   type: 'MONTHLY' | 'WEEKLY' | 'DAILY' | 'CUSTOM';
   targetAmount: number;
   duration: number;
@@ -72,6 +75,7 @@ const convertApiChallengeToSavingsChallenge = (apiChallenge: ApiChallengeRespons
   return {
     id: apiChallenge.id,
     title: apiChallenge.title,
+    challengeRule: apiChallenge.challengeRule,
     description: apiChallenge.description,
     type: apiChallenge.type.toLowerCase() as 'monthly' | 'weekly' | 'daily' | 'custom',
     targetAmount: apiChallenge.targetAmount,
@@ -134,9 +138,9 @@ export const ChallengesPage = () => {
   
   // Use API challenges as primary source, convert to SavingsChallenge format
   const challenges = (apiChallenges || []).map((challenge: unknown) => convertApiChallengeToSavingsChallenge(challenge as ApiChallengeResponse));
-  const challengeStats = null; // Will be loaded from API
+  const challengeStats = null; 
   const isLoading = apiIsLoading;
-
+  console.log('ChallengesPage - challenges:', challenges);
 
   // Use typedCurrentChallenge from useUserChallenges hook
   // typedCurrentChallenge is already available from the hook
@@ -234,25 +238,6 @@ export const ChallengesPage = () => {
     }
   }, [user?.id, getChallenges, getChallengeStats, getChallengeHistory, getUserChallengeStats]); // Include all dependencies
 
-  // Debug: Afficher les données chargées
-  useEffect(() => {
-    console.log('ChallengesPage - apiChallenges:', apiChallenges);
-    console.log('ChallengesPage - challenges:', challenges);
-    console.log('ChallengesPage - typedCurrentChallenge:', typedCurrentChallenge);
-    console.log('ChallengesPage - currentChallengeLoading:', currentChallengeLoading);
-    console.log('ChallengesPage - currentChallengeError:', currentChallengeError);
-    if (typedCurrentChallenge) {
-      console.log('ChallengesPage - typedCurrentChallenge.currentAmount:', typedCurrentChallenge.currentAmount);
-      console.log('ChallengesPage - typedCurrentChallenge.targetAmount:', typedCurrentChallenge.targetAmount);
-      console.log('ChallengesPage - typedCurrentChallenge.status:', typedCurrentChallenge.status);
-    }
-    console.log('ChallengesPage - challengeHistory:', challengeHistory);
-    console.log('ChallengesPage - userChallengeStats:', userChallengeStats);
-    console.log('ChallengesPage - apiIsLoading:', apiIsLoading);
-    console.log('ChallengesPage - userChallengesLoading:', userChallengesLoading);
-    console.log('ChallengesPage - apiError:', apiError);
-  }, [apiChallenges, challenges, typedCurrentChallenge, currentChallengeLoading, currentChallengeError, challengeHistory, userChallengeStats, apiIsLoading, userChallengesLoading, apiError]);
-
   // Filter challenges
   const filteredChallenges = challenges.filter(challenge => {
     const matchesSearch = challenge.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -281,6 +266,10 @@ export const ChallengesPage = () => {
     // Rediriger vers la page de progression collective
     window.location.href = `/collective-progress?challengeId=${challengeId}`;
   };
+
+  const [isEngagementModalOpen, setIsEngagementModalOpen] = useState(false);
+  const [engagementResourceId, setEngagementResourceId] = useState<string | null>(null);
+  const { list: listUserResources, download: downloadUserResource } = useUserResources();
 
   const handleJoinConfirm = async (goalData: { 
     targetAmount: number; 
@@ -311,13 +300,25 @@ export const ChallengesPage = () => {
       // Refresh data with debouncing
       debouncedRefresh();
       
+      // Récupérer la ressource d'engagement et proposer le téléchargement
+      try {
+        const resources = await listUserResources({ type: 'ENGAGEMENT_DOCUMENT', challengeId: selectedChallenge.id });
+        const resId = resources?.[0]?.id;
+        if (resId) {
+          setEngagementResourceId(resId);
+          setIsEngagementModalOpen(true);
+        }
+      } catch {
+        toast.error('Erreur lors de la récupération du document d\'engagement');
+      }
+
       // Close modal and show success message after loading
       setIsJoinModalOpen(false);
       setSelectedChallenge(null);
       toast.success('Challenge rejoint avec succès !');
     } catch (error) {
       console.error('Error joining challenge:', error);
-      toast.error('Erreur lors de la participation au challenge');
+      toast.error(error.message);
     } finally {
       setIsJoiningChallenge(false);
     }
@@ -363,13 +364,13 @@ export const ChallengesPage = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-6"
+      className="space-y-4 sm:space-y-6 px-3 sm:px-4 py-4 sm:py-6"
     >
       {/* Header */}
-      <motion.div variants={fadeInUp} className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Challenges d'épargne</h1>
-          <p className="text-gray-600 mt-1">
+      <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Challenges d'épargne</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">
             Rejoignez des défis motivants pour atteindre vos objectifs financiers
           </p>
         </div>
@@ -378,29 +379,33 @@ export const ChallengesPage = () => {
           variant="outline"
           size="sm"
           disabled={isLoading || isRefreshing}
+          className="flex-shrink-0 text-xs sm:text-sm"
         >
-          <RefreshCw className={`w-4 h-4 mr-2 ${(isLoading || isRefreshing) ? 'animate-spin' : ''}`} />
-          {isRefreshing ? 'Actualisation...' : 'Actualiser'}
+          <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${(isLoading || isRefreshing) ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">{isRefreshing ? 'Actualisation...' : 'Actualiser'}</span>
+          <span className="sm:hidden">{isRefreshing ? 'Actualisation...' : 'Actualiser'}</span>
         </Button>
       </motion.div>
 
       {/* Error State */}
       {apiError && (
-        <motion.div variants={fadeInUp} className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="text-red-600 mr-3">
-              <Trophy className="w-5 h-5" />
+        <motion.div variants={fadeInUp} className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0">
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+              <div className="text-red-600 flex-shrink-0">
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs sm:text-sm font-medium text-red-800">Erreur de chargement</h3>
+                <p className="text-xs sm:text-sm text-red-600 mt-1 break-words">{apiError}</p>
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-red-800">Erreur de chargement</h3>
-              <p className="text-sm text-red-600 mt-1">{apiError}</p>
             </div>
-            <div className="ml-auto">
+            <div className="flex-shrink-0 sm:ml-auto">
               <Button
                 onClick={debouncedRefresh}
                 variant="outline"
                 size="sm"
-                className="text-red-600 border-red-300 hover:bg-red-50"
+                className="text-xs sm:text-sm text-red-600 border-red-300 hover:bg-red-50 w-full sm:w-auto"
                 disabled={isRefreshing}
               >
                 {isRefreshing ? 'Réessai...' : 'Réessayer'}
@@ -411,19 +416,19 @@ export const ChallengesPage = () => {
       )}
 
       {/* Stats Cards */}
-      <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <motion.div variants={fadeInUp} className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {getStatsCards().map((stat, index) => (
           <Card key={index}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className={`p-1.5 sm:p-2 rounded-lg ${stat.bgColor} flex-shrink-0`}>
                   <div className={stat.color}>
                     {stat.icon}
                   </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">{stat.title}</p>
-                  <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-gray-600 truncate">{stat.title}</p>
+                  <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${stat.color} truncate`}>{stat.value}</p>
                 </div>
               </div>
             </CardContent>
@@ -432,7 +437,7 @@ export const ChallengesPage = () => {
       </motion.div>
 
       {/* Current Challenge Section */}
-      <motion.div variants={fadeInUp} className="mb-8">
+      <motion.div variants={fadeInUp} className="mb-4 sm:mb-6 lg:mb-8">
         <CurrentChallengeCard 
           challenge={typedCurrentChallenge}
           isLoading={currentChallengeLoading}
@@ -442,44 +447,19 @@ export const ChallengesPage = () => {
 
       {/* Available Challenges Section */}
       <motion.div variants={fadeInUp}>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-              <Target className="w-6 h-6 text-primary" />
-              <span>Challenges Disponibles</span>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center space-x-2">
+              <Target className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+              <span className="truncate">Challenges Disponibles</span>
             </h2>
           </div>
             {/* Filters */}
             <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        placeholder="Rechercher un challenge..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9"
-                      />
-                    </div>
-                  </div>
-                  
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-full sm:w-auto">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les types</SelectItem>
-                      <SelectItem value="monthly">Mensuel</SelectItem>
-                      <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                      <SelectItem value="daily">Quotidien</SelectItem>
-                      <SelectItem value="custom">Personnalisé</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-auto">
+                    <SelectTrigger className="w-full sm:w-auto min-w-[150px] text-sm sm:text-base">
                       <SelectValue placeholder="Statut" />
                     </SelectTrigger>
                     <SelectContent>
@@ -498,7 +478,7 @@ export const ChallengesPage = () => {
               variants={staggerContainer}
               initial="initial"
               animate="animate"
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
             >
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, index) => (
@@ -538,12 +518,12 @@ export const ChallengesPage = () => {
                   );
                 })
               ) : (
-                <div className="col-span-full text-center py-12">
-                  <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                <div className="col-span-full text-center py-8 sm:py-12 px-4">
+                  <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-600 mb-2">
                     Aucun challenge trouvé
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="text-sm sm:text-base text-gray-500">
                     Essayez de modifier vos critères de recherche
                   </p>
                 </div>
@@ -563,6 +543,46 @@ export const ChallengesPage = () => {
           onJoin={handleJoinConfirm}
           isLoading={isJoiningChallenge}
         />
+
+      {/* Engagement Document Download Modal */}
+      <Dialog open={isEngagementModalOpen} onOpenChange={setIsEngagementModalOpen}>
+        <DialogContent className="w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+              Document d'engagement
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-xs sm:text-sm text-gray-600">
+            <p>Votre document d'engagement est prêt.</p>
+            <p>Téléchargez-le maintenant ou consultez toutes vos ressources.</p>
+          </div>
+          <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs sm:text-sm"
+              onClick={() => {
+                setIsEngagementModalOpen(false);
+                window.location.href = '/user-dashboard/resources';
+              }}
+            >
+              Voir mes ressources
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs sm:text-sm"
+              onClick={async () => {
+                if (engagementResourceId) {
+                  await downloadUserResource(engagementResourceId);
+                }
+              }}
+            >
+              Télécharger
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };

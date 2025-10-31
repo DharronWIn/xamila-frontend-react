@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -18,19 +18,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import UserAvatar from "@/components/ui/UserAvatar";
+import { UserBadge } from "@/components/gamification/UserBadge";
 import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
 import { usePremiumProtection } from "@/hooks/usePremiumProtection";
-import { useCurrentChallengeQuery, useInvalidateCurrentChallenge } from "@/lib/apiComponent/hooks/useChallenges";
+import { useCurrentChallengeQuery, useInvalidateCurrentChallenge, useCurrentCollectiveProgress } from "@/lib/apiComponent/hooks/useChallenges";
 import { Challenge } from "@/lib/apiComponent/types";
-import {
-  useCurrentChallengeProgress,
-  useCurrentChallengeLeaderboard,
-  useCurrentChallengeMilestones,
-  useCurrentChallengeAchievements,
-  useCurrentChallengeTimeline
-} from "@/lib/apiComponent/hooks/useCurrentChallenge";
-import MilestonesCard from "@/components/challenges/MilestonesCard";
-import AchievementsCard from "@/components/challenges/AchievementsCard";
+import { UserRank } from "@/types/gamification";
 import PremiumUpgradeModal from "@/components/premium/PremiumUpgradeModal";
 
 const fadeInUp = {
@@ -68,50 +62,66 @@ const CollectiveProgress = () => {
   const typedCurrentChallenge = currentChallenge as Challenge | null;
   
   const invalidateCurrentChallenge = useInvalidateCurrentChallenge();
-  const { progress, isLoading: isLoadingProgress } = useCurrentChallengeProgress();
-  const { leaderboard: currentLeaderboard, isLoading: isLoadingLeaderboard, refetch: refetchLeaderboard } = useCurrentChallengeLeaderboard();
-  const { milestones, isLoading: isLoadingMilestones } = useCurrentChallengeMilestones();
-  const { achievements, isLoading: isLoadingAchievements } = useCurrentChallengeAchievements();
-  const { timeline, isLoading: isLoadingTimeline } = useCurrentChallengeTimeline();
+  const {
+    progressData,
+    leaderboardData,
+    isLoading: isCollectiveLoading,
+    getCurrentCollectiveProgress,
+    getCurrentLeaderboard,
+  } = useCurrentCollectiveProgress();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<'progress' | 'amount' | 'consistency'>('progress');
+  const pageLimit = 10;
 
   useEffect(() => {
-    // Les données sont maintenant chargées via les hooks API
-    // Pas besoin de refetchLeaderboard manuel
-  }, [isPremium]);
+    if (!typedCurrentChallenge) return;
+    // Charger les données collectives uniquement si un challenge courant existe
+    getCurrentCollectiveProgress().catch(() => {});
+    getCurrentLeaderboard(sortBy, pageLimit, currentPage).catch(() => {});
+  }, [typedCurrentChallenge, getCurrentCollectiveProgress, getCurrentLeaderboard, sortBy, currentPage]);
 
-  // Debug: Afficher les données du challenge actuel
-  useEffect(() => {
-    console.log('CollectiveProgress - typedCurrentChallenge:', typedCurrentChallenge);
-    console.log('CollectiveProgress - isLoadingChallenge:', isLoadingChallenge);
-    console.log('CollectiveProgress - challengeError:', challengeError);
-    console.log('CollectiveProgress - user:', user);
-  }, [typedCurrentChallenge, isLoadingChallenge, challengeError, user]);
+  // Debug logging removed
 
 
-  // Utiliser les données du challenge actuel si disponible, sinon fallback sur l'ancien système
+  // Utiliser les données du challenge actuel si disponible
   const hasCurrentChallenge = typedCurrentChallenge !== null;
-  const isLoadingData = isLoadingChallenge || isLoadingProgress || isLoadingLeaderboard;
+  const isLoading = isLoadingChallenge || isCollectiveLoading;
   
-  // Calculer les stats collectives
-  const totalParticipants = hasCurrentChallenge 
-    ? (currentLeaderboard?.totalParticipants || 0)
-    : 0;
-    
-  const totalSavedCollective = hasCurrentChallenge 
-    ? (progress?.collectiveCurrentAmount || 0)
-    : 0;
-    
-  const totalGoalCollective = hasCurrentChallenge 
-    ? (progress?.collectiveTarget || 0)
-    : 0;
-    
-  const averageProgress = hasCurrentChallenge 
-    ? (progress?.collectiveProgress || 0)
-    : (totalParticipants > 0 ? (totalSavedCollective / totalGoalCollective) * 100 : 0);
-    
-  const userRank = hasCurrentChallenge 
-    ? (currentLeaderboard?.currentUserRank || null)
-    : null;
+  // Extraire les données de progressData
+  const totalParticipantsFromProgress = progressData?.progress?.totalParticipants || 0;
+  const totalSavedCollective = progressData?.progress?.totalAmountSaved || 0;
+  const totalGoalCollective = progressData?.progress?.collectiveTarget || 0;
+  const averageProgress = progressData?.progress?.averageProgress || 0;
+  const completionRate = progressData?.progress?.completionRate || 0;
+  const daysRemaining = progressData?.progress?.daysRemaining || 0;
+  
+  // Extraire les données du leaderboard
+  const currentLeaderboard = leaderboardData?.leaderboard || [];
+  const paginationMeta = leaderboardData?.meta || {
+    total: 0,
+    page: 1,
+    limit: pageLimit,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  };
+  const totalParticipantsFromLeaderboard = paginationMeta.total;
+  // Utiliser le total depuis le leaderboard si disponible, sinon depuis progress
+  const totalParticipants = totalParticipantsFromLeaderboard || totalParticipantsFromProgress;
+  
+  // Utiliser le userRank depuis la réponse API (rang global, pas paginé)
+  const userRank = leaderboardData?.userRank ?? null;
+  
+  // Gestion de la pagination
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+  
+  const handleSortChange = (newSortBy: 'progress' | 'amount' | 'consistency') => {
+    setSortBy(newSortBy);
+    setCurrentPage(1); // Réinitialiser à la première page lors du changement de tri
+  };
 
   return (
     <motion.div
@@ -155,30 +165,7 @@ const CollectiveProgress = () => {
             </div>
           )}
           
-          {/* Debug Info */}
-          <div className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
-            <strong>Debug:</strong> 
-            Challenge: {typedCurrentChallenge ? '✅' : '❌'} | 
-            Loading: {isLoadingChallenge ? '⏳' : '✅'} | 
-            Error: {challengeError ? '❌' : '✅'} | 
-            Premium: {isPremium ? '✅' : '❌'}
-          </div>
           
-          {/* Debug Details */}
-          {process.env.NODE_ENV === 'development' && (
-            <details className="mt-2">
-              <summary className="cursor-pointer text-xs text-blue-600 hover:text-blue-800">
-                🔍 Détails Debug (Dev Mode)
-              </summary>
-              <div className="mt-2 p-2 bg-gray-50 rounded text-xs font-mono">
-                <div><strong>typedCurrentChallenge:</strong> {JSON.stringify(typedCurrentChallenge, null, 2)}</div>
-                <div><strong>progress:</strong> {JSON.stringify(progress, null, 2)}</div>
-                <div><strong>currentLeaderboard:</strong> {JSON.stringify(currentLeaderboard, null, 2)}</div>
-                <div><strong>hasCurrentChallenge:</strong> {hasCurrentChallenge.toString()}</div>
-                <div><strong>isLoadingData:</strong> {isLoadingData.toString()}</div>
-              </div>
-            </details>
-          )}
         </div>
         <div className="flex items-center space-x-3">
           <Badge 
@@ -192,34 +179,7 @@ const CollectiveProgress = () => {
               </>
             ) : 'Fonctionnalité Premium'}
           </Badge>
-          <Button
-            onClick={() => {
-              if (hasCurrentChallenge) {
-                refetchLeaderboard();
-              } else {
-                refetchLeaderboard();
-              }
-            }}
-            variant="outline"
-            size="sm"
-            className="flex items-center space-x-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Actualiser</span>
-          </Button>
-          <Button
-            onClick={() => {
-              if (user?.id) {
-                invalidateCurrentChallenge(user.id);
-              }
-            }}
-            variant="outline"
-            size="sm"
-            className="flex items-center space-x-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Refresh Challenge</span>
-          </Button>
+
         </div>
       </motion.div>
 
@@ -476,32 +436,50 @@ const CollectiveProgress = () => {
                         <Trophy className="w-5 h-5 text-primary" />
                         <span>Classement Global</span>
                       </CardTitle>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => hasCurrentChallenge ? refetchLeaderboard() : refetchLeaderboard()}
-                        disabled={isLoadingData}
-                      >
-                        <RefreshCw className={`w-4 h-4 ${isLoadingData ? 'animate-spin' : ''}`} />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={sortBy}
+                          onChange={(e) => handleSortChange(e.target.value as 'progress' | 'amount' | 'consistency')}
+                          className="text-sm border rounded-md px-2 py-1"
+                          disabled={isLoading}
+                        >
+                          <option value="progress">Progression</option>
+                          <option value="amount">Montant</option>
+                          <option value="consistency">Régularité</option>
+                        </select>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => hasCurrentChallenge && getCurrentLeaderboard(sortBy, pageLimit, currentPage)}
+                          disabled={isLoading}
+                        >
+                          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {hasCurrentChallenge ? (
-                        currentLeaderboard?.participants?.length > 0 ? (
-                          currentLeaderboard.participants.map((participant, index) => (
-                          <motion.div
-                            key={participant.participantId}
+                      {currentLeaderboard.length > 0 ? (
+                        currentLeaderboard.map((participant, index) => {
+                          const isCurrentUser = participant.userId === user?.id;
+                          const displayName = participant.firstName && participant.lastName
+                            ? `${participant.firstName} ${participant.lastName}`
+                            : participant.userName;
+                          
+                          return (
+                            <motion.div
+                            key={participant.userId}
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.05 }}
                             className={`flex items-center space-x-3 p-4 rounded-lg ${
-                              participant.isCurrentUser 
+                              isCurrentUser 
                                 ? 'bg-primary/10 border-2 border-primary/30' 
                                 : 'bg-gray-50'
                             }`}
                           >
+                            {/* Rang */}
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
                               participant.rank <= 3 
                                 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white' 
@@ -511,11 +489,46 @@ const CollectiveProgress = () => {
                             }`}>
                               {participant.rank}
                             </div>
+                            
+                            {/* Avatar cliquable */}
+                            {!isCurrentUser && participant.userId && (
+                              <UserAvatar 
+                                src={participant.pictureProfilUrl}
+                                alt={displayName}
+                                userId={participant.userId}
+                                clickable
+                                size="md"
+                                className="flex-shrink-0"
+                              />
+                            )}
+                            
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2 mb-1">
+                              <div className="flex items-center space-x-2 mb-1 flex-wrap">
                                 <p className="font-medium truncate">
-                                  {participant.isCurrentUser ? 'Vous' : `${participant.user.firstName} ${participant.user.lastName}`}
+                                  <a
+                                    href={`/user-dashboard/profile/${participant.userId}`}
+                                    className="hover:underline"
+                                  >
+                                    {isCurrentUser ? 'Vous' : displayName}
+                                  </a>
                                 </p>
+                                
+                                {/* Badge de gamification */}
+                                {participant.level && participant.userRank && !isCurrentUser && (
+                                  <UserBadge 
+                                    userLevel={{
+                                      level: participant.level,
+                                      totalXP: participant.totalXP || 0,
+                                      rank: participant.userRank as UserRank,
+                                      totalTrophies: 0,
+                                      totalBadges: 0
+                                    }}
+                                    userId={participant.userId}
+                                    size="sm"
+                                    showLevel={false}
+                                  />
+                                )}
+                                
                                 {participant.rank <= 3 && (
                                   <div className="flex items-center">
                                     {participant.rank === 1 && <Trophy className="w-4 h-4 text-yellow-500" />}
@@ -527,72 +540,51 @@ const CollectiveProgress = () => {
                               <div className="space-y-1">
                                 <div className="flex justify-between text-xs text-gray-500">
                                   <span>{participant.currentAmount.toLocaleString()}€ / {participant.targetAmount.toLocaleString()}€</span>
-                                  <span>{participant.progress.toFixed(1)}%</span>
+                                  <span>{participant.progressPercentage.toFixed(1)}%</span>
                                 </div>
                                 <Progress 
-                                  value={participant.progress} 
+                                  value={participant.progressPercentage} 
                                   className="h-2"
                                 />
                               </div>
                             </div>
                           </motion.div>
-                        ))
+                          );
+                        })
                         ) : (
                           <div className="text-center py-8 text-gray-500">
                             <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                             <p>Aucun participant pour le moment</p>
                           </div>
-                        )
-                      ) : (
-                        (currentLeaderboard?.participants || []).map((participant, index) => (
-                        <motion.div
-                          key={participant.participantId}
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className={`flex items-center space-x-3 p-4 rounded-lg ${
-                            participant.user.id === user?.id 
-                              ? 'bg-primary/10 border-2 border-primary/30' 
-                              : 'bg-gray-50'
-                          }`}
-                        >
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
-                            participant.rank <= 3 
-                              ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white' 
-                              : participant.rank <= 10
-                              ? 'bg-gradient-to-r from-blue-400 to-blue-600 text-white'
-                              : 'bg-gray-200 text-gray-600'
-                          }`}>
-                            {participant.rank}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <p className="font-medium truncate">
-                                {participant.user.id === user?.id ? 'Vous' : `${participant.user.firstName} ${participant.user.lastName}`}
-                              </p>
-                              {participant.rank <= 3 && (
-                                <div className="flex items-center">
-                                  {participant.rank === 1 && <Trophy className="w-4 h-4 text-yellow-500" />}
-                                  {participant.rank === 2 && <Medal className="w-4 h-4 text-gray-400" />}
-                                  {participant.rank === 3 && <Medal className="w-4 h-4 text-amber-600" />}
-                                </div>
-                              )}
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-xs text-gray-500">
-                                <span>{participant.currentAmount.toLocaleString()}€ / {participant.targetAmount.toLocaleString()}€</span>
-                                <span>{participant.progress.toFixed(1)}%</span>
-                              </div>
-                              <Progress 
-                                value={participant.progress} 
-                                className="h-2"
-                              />
-                            </div>
-                          </div>
-                        </motion.div>
-                        ))
-                      )}
+                        )}
                     </div>
+                    
+                    {/* Pagination */}
+                    {paginationMeta.totalPages > 1 && (
+                      <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                        <div className="text-sm text-gray-600">
+                          Page {paginationMeta.page} sur {paginationMeta.totalPages} ({paginationMeta.total} participants)
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={!paginationMeta.hasPreviousPage || isLoading}
+                          >
+                            Précédent
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={!paginationMeta.hasNextPage || isLoading}
+                          >
+                            Suivant
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -624,23 +616,6 @@ const CollectiveProgress = () => {
               </CardContent>
             </Card>
           </motion.div>
-
-          {/* Milestones and Achievements */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            <motion.div variants={fadeInUp}>
-              <MilestonesCard 
-                milestones={milestones} 
-                isLoading={isLoadingMilestones}
-              />
-            </motion.div>
-            
-            <motion.div variants={fadeInUp}>
-              <AchievementsCard 
-                achievements={achievements} 
-                isLoading={isLoadingAchievements}
-              />
-            </motion.div>
-          </div>
         </>
       )}
 

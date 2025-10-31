@@ -14,7 +14,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import UserAvatar from "@/components/ui/UserAvatar";
+import { UserBadge } from "@/components/gamification/UserBadge";
 import { usePosts } from "@/lib/apiComponent/hooks/useSocial";
+import { useGamificationRewards } from "@/hooks/useGamificationRewards";
 import { Post } from "@/lib/apiComponent/types";
 
 interface PostCardProps {
@@ -24,9 +26,9 @@ interface PostCardProps {
 
 const PostCard = ({ post, onCommentClick }: PostCardProps) => {
   const { likePost } = usePosts();
+  const { checkAfterLikeReceived } = useGamificationRewards();
   const [isLiked, setIsLiked] = useState(post.isLikedByCurrentUser || false);
   const [likes, setLikes] = useState(post.likes || 0);
-
 
   // Synchronize local state with post data
   useEffect(() => {
@@ -44,6 +46,11 @@ const PostCard = ({ post, onCommentClick }: PostCardProps) => {
     
     try {
       await likePost(post.id);
+      
+      // Si c'est un nouveau like (pas un unlike), vérifier les récompenses
+      if (!previousLiked) {
+        await checkAfterLikeReceived();
+      }
     } catch (error) {
       console.error('Error liking post:', error);
       // Rollback on error
@@ -139,15 +146,24 @@ const PostCard = ({ post, onCommentClick }: PostCardProps) => {
             <div className="flex items-center space-x-4">
               <UserAvatar 
                 user={post.user}
+                userId={post.user?.id}
+                clickable
                 size="lg"
                 className="w-12 h-12 ring-2 ring-white shadow-lg group-hover:ring-primary/20 transition-all duration-300"
                 fallbackClassName="bg-gradient-to-br from-primary/20 to-primary/40 text-primary font-bold text-lg"
               />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-3 mb-1">
+                <div className="flex items-center space-x-3 mb-1 flex-wrap">
                   <h3 className="font-bold text-gray-900 text-lg group-hover:text-primary transition-colors duration-300">
                     {post.user?.name || 'Utilisateur'}
                   </h3>
+                  {post.user?.userLevel && (
+                    <UserBadge 
+                      userLevel={post.user.userLevel}
+                      userId={post.user.id}
+                      size="sm"
+                    />
+                  )}
                   <Badge 
                     variant="outline" 
                     className={`${getPostTypeColor(post.type)} border-2 font-medium px-3 py-1 rounded-full shadow-sm group-hover:shadow-md transition-all duration-300`}

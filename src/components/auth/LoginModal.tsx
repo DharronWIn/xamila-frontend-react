@@ -184,7 +184,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             </form>
 
             {/* Demo credentials */}
-            <div className="px-6 pb-6">
+            {/* <div className="px-6 pb-6">
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-xs text-gray-600 font-medium mb-2">Comptes de démonstration :</p>
                 <div className="text-xs text-gray-500 space-y-1">
@@ -192,7 +192,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   <div>👨‍💼 Admin: admin@example.com / password</div>
                 </div>
               </div>
-            </div>
+            </div> */}
           </motion.div>
         </motion.div>
       )}

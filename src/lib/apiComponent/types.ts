@@ -276,6 +276,69 @@ export interface ConfigureGoalDto {
   };
 }
 
+// Current Challenge Response (with userParticipation)
+export interface CurrentChallengeResponse {
+  id: string;
+  title: string;
+  description: string;
+  challengeRule?: string;
+  type: string; // 'MONTHLY' | 'WEEKLY' | 'DAILY' | 'CUSTOM'
+  targetAmount: number;
+  duration?: number;
+  status: string; // 'ACTIVE' | 'UPCOMING' | 'COMPLETED' | 'CANCELLED'
+  createdBy?: string;
+  startDate: string;
+  endDate: string;
+  rewards?: string[];
+  maxParticipants?: number;
+  createdAt: string;
+  updatedAt: string;
+  createdByUser?: {
+    id: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+    pictureProfilUrl?: string | null;
+  };
+  _count?: {
+    participants?: number;
+    transactions?: number;
+  };
+  collectiveTarget?: number;
+  collectiveCurrentAmount?: number;
+  collectiveProgress?: number;
+  isJoined?: boolean;
+  hasAbandoned?: boolean;
+  userParticipation?: {
+    id: string;
+    status: string; // 'ACTIVE' | 'COMPLETED' | 'ABANDONED'
+    currentAmount: number;
+    mode?: string;
+    motivation?: string;
+    joinedAt: string;
+    completedAt?: string;
+    abandonedAt?: string | null;
+    goal?: {
+      id: string;
+      challengeId: string;
+      participantId: string;
+      userId: string;
+      targetAmount: number;
+      currentAmount: number;
+      progress: number;
+      isAchieved: boolean;
+      achievedAt?: string;
+      currency?: string | null;
+      monthlyIncome?: number | null;
+      isVariableIncome?: boolean;
+      incomeHistory?: unknown[];
+      additionalNotes?: string | null;
+      createdAt: string;
+      updatedAt: string;
+    };
+  };
+}
+
 export interface Challenge {
   id: string;
   title: string;
@@ -361,6 +424,7 @@ export interface CreateTransactionDto {
   category: string;
   description?: string;
   date?: string;
+  isEpargne?: boolean;
 }
 
 export interface UpdateTransactionDto {
@@ -369,6 +433,14 @@ export interface UpdateTransactionDto {
   category?: string;
   description?: string;
   date?: string;
+  isEpargne?: boolean;
+}
+
+// Réponse de création de transaction avec balance et summary mis à jour
+export interface CreateTransactionResponse {
+  transaction: Transaction;
+  balance: FluxBalanceDto;
+  summary: FluxSummaryDto;
 }
 
 export interface Transaction {
@@ -379,6 +451,10 @@ export interface Transaction {
   category: string;
   description?: string;
   date: string;
+  challengeId?: string | null;
+  defiId?: string | null;
+  isEpargne?: boolean;
+  isLiberation?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -415,20 +491,83 @@ export interface TransactionChartDataDto {
   categories: string[];
 }
 
-export const TRANSACTION_CATEGORIES = [
-  'Alimentation',
-  'Transport',
-  'Logement',
-  'Santé',
-  'Éducation',
-  'Divertissement',
-  'Vêtements',
-  'Épargne',
-  'Investissement',
-  'Autres',
-] as const;
+// ==================== FLUX FINANCIER TYPES ====================
+export interface FluxBalanceDto {
+  totalEntrees: number;
+  totalSorties: number;
+  totalEpargne: number;
+  epargneChallenge: number;
+  epargneDefi: number;
+  epargneLibre: number;
+  soldeFlux: number;
+}
 
-export type TransactionCategory = typeof TRANSACTION_CATEGORIES[number];
+export interface FluxSummaryDto {
+  balance: FluxBalanceDto;
+  recentTransactions: Transaction[];
+  monthlyComparison: {
+    currentMonth: {
+      entrees: number;
+      sorties: number;
+      epargne: number;
+    };
+    lastMonth: {
+      entrees: number;
+      sorties: number;
+      epargne: number;
+    };
+  };
+}
+
+export interface FluxToggleDto {
+  enabled: boolean;
+}
+
+export interface FluxToggleResponseDto {
+  message: string;
+  fluxEnabled: boolean;
+}
+
+export interface FluxChartByCategoryItem {
+  category: string;
+  amount: number;
+  percentage: number;
+  count: number;
+}
+
+export interface FluxChartByCategoryDto {
+  entrees: FluxChartByCategoryItem[];
+  sorties: FluxChartByCategoryItem[];
+  epargne: FluxChartByCategoryItem[];
+  totalEntrees: number;
+  totalSorties: number;
+  totalEpargne: number;
+}
+
+export interface CategoriesResponseDto {
+  INCOME: string[];
+  EXPENSE: string[];
+}
+
+export interface CategoryWithType {
+  name: string;
+  type: 'Entrée' | 'Sortie';
+}
+
+export interface CategoriesWithTypeResponseDto {
+  categories: CategoryWithType[];
+}
+
+// ==================== TRANSACTION CATEGORIES ====================
+// Import categories from constants
+export { 
+  INCOME_CATEGORIES, 
+  EXPENSE_CATEGORIES, 
+  ALL_CATEGORIES,
+  type IncomeCategory,
+  type ExpenseCategory,
+  type TransactionCategory
+} from '../../constants/financialCategories';
 
 // ==================== SOCIAL TYPES ====================
 export interface CreatePostDto {
@@ -713,6 +852,7 @@ export interface UserSettings {
   theme: 'light' | 'dark' | 'auto';
   language: string;
   currency: string;
+  fluxEnabled?: boolean;
   notifications: NotificationSettings;
   privacy: PrivacySettings;
   createdAt: string;
@@ -740,6 +880,7 @@ export interface UpdateSettingsDto {
   theme?: 'light' | 'dark' | 'auto';
   language?: string;
   currency?: string;
+  fluxEnabled?: boolean;
   notifications?: Partial<NotificationSettings>;
   privacy?: Partial<PrivacySettings>;
 }

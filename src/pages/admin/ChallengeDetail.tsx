@@ -2,15 +2,15 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-    ArrowLeft,
-    Edit,
-    Trash2,
-    Users,
-    Target,
-    TrendingUp, Award, Activity,
-    BarChart3,
-    PieChart,
-    Download, Loader2, XCircle
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Users,
+  Target,
+  TrendingUp, Award, Activity,
+  BarChart3,
+  PieChart,
+  Download, Loader2, XCircle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,19 +18,19 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAdminChallenges } from "@/lib/apiComponent/hooks/useAdmin";
 import { Challenge } from "@/types/admin";
@@ -112,9 +112,7 @@ const ChallengeDetail = () => {
     deleteChallenge,
     getChallengeStats,
     getChallengeParticipants,
-    getChallengeTransactions,
-    getChallengeLeaderboard,
-    getChallengeProgress
+    getChallengeTransactions
   } = useAdminChallenges();
 
   const [challenge, setChallenge] = useState<ChallengeDetailData | null>(null);
@@ -131,12 +129,10 @@ const ChallengeDetail = () => {
       
       try {
         setIsLoading(true);
-        const [challengeData, participants, transactions, leaderboard, progress] = await Promise.all([
+        const [challengeData, participants, transactions] = await Promise.all([
           getChallengeById(id),
           getChallengeParticipants(id),
-          getChallengeTransactions(id),
-          getChallengeLeaderboard(id),
-          getChallengeProgress(id)
+          getChallengeTransactions(id)
         ]);
 
         if (challengeData) {
@@ -163,12 +159,56 @@ const ChallengeDetail = () => {
           // Créer l'objet challenge avec des valeurs par défaut
           const challengeDetailData: ChallengeDetailData = {
             ...challengeData,
-            participants: participantsArray,
-            transactions: transactionsArray,
+            type: challengeData.type.toUpperCase() as 'MONTHLY' | 'WEEKLY' | 'DAILY' | 'CUSTOM',
+            status: challengeData.status.toUpperCase() as 'UPCOMING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED',
+            participants: participantsArray.map((p) => ({
+              id: p.id,
+              userId: p.userId,
+              currentAmount: p.currentAmount,
+              status: p.status,
+              mode: 'auto',
+              bankAccountId: undefined,
+              motivation: undefined,
+              abandonReason: undefined,
+              abandonCategory: undefined,
+              joinedAt: p.joinedAt,
+              completedAt: p.completedAt,
+              abandonedAt: p.abandonedAt,
+              user: {
+                id: p.user.id,
+                username: p.user.email.split('@')[0] || 'user',
+                firstName: p.user.firstName,
+                lastName: p.user.lastName,
+                avatar: p.user.avatar
+              },
+              goal: {
+                id: '',
+                targetAmount: p.targetAmount || 0,
+                currentAmount: p.currentAmount || 0,
+                progress: p.progress || 0,
+                isAchieved: false,
+                achievedAt: undefined,
+                currency: 'XOF',
+                monthlyIncome: 0,
+                isVariableIncome: false,
+                incomeHistory: [],
+                additionalNotes: undefined
+              }
+            })),
+            transactions: (transactionsArray as Array<{
+              id: string;
+              participantId: string;
+              userId: string;
+              amount: number;
+              type: string;
+              description: string;
+              date: string;
+              createdAt: string;
+            }>),
             collectiveTarget: challengeData.targetAmount || 0,
             collectiveCurrentAmount,
             collectiveProgress,
-            createdByUser: challengeData.createdByUser || {
+            createdByUser: {
               id: challengeData.createdBy || '',
               username: 'Utilisateur inconnu',
               firstName: 'Utilisateur',
@@ -191,15 +231,15 @@ const ChallengeDetail = () => {
     };
 
     loadChallengeData();
-  }, [id, getChallengeById, getChallengeParticipants, getChallengeTransactions, getChallengeLeaderboard, getChallengeProgress]);
+  }, [id, getChallengeById, getChallengeParticipants, getChallengeTransactions]);
 
-  const handleUpdateStatus = async (newStatus: string) => {
+  const handleUpdateStatus = async (newStatus: 'UPCOMING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED') => {
     if (!challenge) return;
     
     try {
       setIsUpdating(true);
-      await updateChallenge(challenge.id, { status: newStatus as any });
-      setChallenge({ ...challenge, status: newStatus as any });
+      await updateChallenge(challenge.id, { status: newStatus });
+      setChallenge({ ...challenge, status: newStatus });
       toast.success("Statut du challenge mis à jour");
     } catch (error) {
       toast.error("Erreur lors de la mise à jour du statut");
@@ -485,6 +525,12 @@ const ChallengeDetail = () => {
                         <span className="text-sm">{reward}</span>
                       </div>
                     ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Règles du challenge</p>
+                  <div className="mt-2 p-3 border rounded bg-gray-50 max-h-48 overflow-auto whitespace-pre-wrap text-sm">
+                    {challenge?.challengeRule || 'Aucune règle spécifiée.'}
                   </div>
                 </div>
               </CardContent>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  Bell, Trophy, Check, Settings
+  Bell, Trophy, Check, Settings, Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -283,21 +283,20 @@ const NotificationCenter = () => {
             </ScrollArea>
 
             {/* Footer */}
-            {allNotifications.length > 0 && (
-              <div className="p-3 border-t bg-gray-50">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full text-xs"
-                  onClick={() => {
-                    setIsOpen(false);
-                    navigate('/user-dashboard/notifications');
-                  }}
-                >
-                  Voir toutes les notifications
-                </Button>
-              </div>
-            )}
+            <div className="p-3 border-t bg-gray-50">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full text-xs hover:bg-blue-50 hover:border-blue-200"
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/user-dashboard/notifications');
+                }}
+              >
+                <Eye className="w-3 h-3 mr-2" />
+                Voir toutes les notifications
+              </Button>
+            </div>
           </motion.div>
         </AnimatePresence>
       </DropdownMenuContent>

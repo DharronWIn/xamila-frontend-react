@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUserProfilePicture, generateAvatarFromInitials } from '@/lib/utils';
 import { User } from '@/lib/apiComponent/types';
@@ -7,17 +8,24 @@ import { useAuthStore } from '@/stores/authStore';
 import { useAuth } from '@/lib/apiComponent/hooks/useAuth';
 
 interface UserAvatarProps {
-  user: { 
+  user?: { 
     avatar?: string; 
     pictureProfilUrl?: string; 
     name?: string;
     firstName?: string;
     lastName?: string;
-  } | null | undefined;
+    id?: string;
+  } | null;
+  src?: string; // URL directe de l'image
+  alt?: string; // Nom pour le fallback
+  userId?: string; // ID pour la navigation
   className?: string;
   fallbackClassName?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showFallback?: boolean;
+  clickable?: boolean; // Rendre l'avatar cliquable
+  onClick?: () => void; // Action personnalisée au clic
+  disableWrapper?: boolean; // Désactiver le wrapper button
 }
 
 const sizeClasses = {
@@ -35,12 +43,19 @@ const textSizeClasses = {
 };
 
 export const UserAvatar = ({ 
-  user, 
+  user,
+  src,
+  alt,
+  userId,
   className = '', 
   fallbackClassName = '',
   size = 'md',
-  showFallback = true
+  showFallback = true,
+  clickable = false,
+  onClick,
+  disableWrapper = false
 }: UserAvatarProps) => {
+  const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const forceUpdate = useAvatarForceUpdate(); // Force re-render on avatar update
@@ -52,6 +67,9 @@ export const UserAvatar = ({
   // Priorité : user passé en props > useAuth > useAuthStore
   const currentUser = user || userFromAuth || userFromStore;
   
+  // Déterminer l'ID de l'utilisateur pour la navigation
+  const profileUserId = userId || user?.id || currentUser?.id;
+  
   // Forcer la mise à jour quand l'avatar change
   useEffect(() => {
     console.log('UserAvatar - Avatar changed:', {
@@ -62,12 +80,13 @@ export const UserAvatar = ({
     forceUpdate();
   }, [currentUser, forceUpdate]);
 
-  const avatarUrl = getUserProfilePicture(currentUser as User);
+  // Déterminer l'URL de l'avatar
+  const avatarUrl = src || getUserProfilePicture(currentUser as User);
   const userWithNames = currentUser as User & { firstName?: string; lastName?: string };
-  const fallbackText = userWithNames?.firstName?.charAt(0)?.toUpperCase() || currentUser?.name?.charAt(0)?.toUpperCase() || 'U';
-  const fullName = userWithNames?.firstName && userWithNames?.lastName ? `${userWithNames.firstName} ${userWithNames.lastName}` : currentUser?.name;
+  const displayName = alt || currentUser?.name || '';
+  const fallbackText = userWithNames?.firstName?.charAt(0)?.toUpperCase() || displayName?.charAt(0)?.toUpperCase() || 'U';
+  const fullName = userWithNames?.firstName && userWithNames?.lastName ? `${userWithNames.firstName} ${userWithNames.lastName}` : displayName;
   const generatedAvatarUrl = fullName ? generateAvatarFromInitials(fullName) : null;
-
 
   const handleImageLoad = () => {
     setIsLoading(false);
@@ -79,10 +98,18 @@ export const UserAvatar = ({
     setImageError(true);
   };
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else if ((clickable || profileUserId) && profileUserId) {
+      navigate(`/user-dashboard/profile/${profileUserId}`);
+    }
+  };
+
   // Priorité : avatarUrl > generatedAvatarUrl
   const finalImageUrl = avatarUrl || generatedAvatarUrl;
 
-  return (
+  const avatarElement = (
     <Avatar className={`${sizeClasses[size]} ${className}`}>
       {finalImageUrl && (
         <AvatarImage 
@@ -105,6 +132,21 @@ export const UserAvatar = ({
       )}
     </Avatar>
   );
+
+  // Si cliquable ou userId fourni, wrapper dans un button
+  if (!disableWrapper && (clickable || onClick || profileUserId)) {
+    return (
+      <button
+        onClick={handleClick}
+        className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-full transition-transform hover:scale-105"
+        type="button"
+      >
+        {avatarElement}
+      </button>
+    );
+  }
+
+  return avatarElement;
 };
 
 export default UserAvatar;

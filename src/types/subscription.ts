@@ -17,7 +17,7 @@ export interface SubscriptionPlanInfo {
 export const subscriptionPlans: SubscriptionPlanInfo[] = [
   {
     value: SubscriptionPlan.FREE,
-    label: 'Gratuit',
+    label: 'Standard',
     description: 'Accès aux fonctionnalités de base',
     features: [
       '1 défi par mois',

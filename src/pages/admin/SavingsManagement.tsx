@@ -66,9 +66,13 @@ const SavingsManagement = () => {
     isLoading,
     error,
     getSavingsGoals,
+    getSavingsGoalById,
     getSavingsGoalStats,
     updateSavingsGoal,
-    deleteSavingsGoal
+    deleteSavingsGoal,
+    getSavingsChallenges,
+    getSavingsChallengeById,
+    getCollectiveProgress
   } = useAdminSavingsGoals();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,7 +87,7 @@ const SavingsManagement = () => {
     const loadData = async () => {
       try {
         const [goalsData, statsData] = await Promise.all([
-          getSavingsGoals(),
+          getSavingsGoals({ page: 1, limit: 50 }),
           getSavingsGoalStats()
         ]);
         setStats(statsData);

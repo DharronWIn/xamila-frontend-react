@@ -129,12 +129,12 @@ const DefisPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 p-1">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="container mx-auto px-4 py-8"
+        className="container mx-auto px-1 py-8"
       >
         {/* Header */}
         <motion.div variants={fadeInUp} className="mb-8">
@@ -161,7 +161,7 @@ const DefisPage = () => {
         {/* Stats Cards */}
         <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-1">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Trophy className="w-6 h-6 text-blue-600" />
@@ -175,7 +175,7 @@ const DefisPage = () => {
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-1">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-green-100 rounded-lg">
                   <Users className="w-6 h-6 text-green-600" />
@@ -191,7 +191,7 @@ const DefisPage = () => {
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-1">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-purple-100 rounded-lg">
                   <TrendingUp className="w-6 h-6 text-purple-600" />
@@ -224,7 +224,7 @@ const DefisPage = () => {
         {/* Filters and Search */}
         <motion.div variants={fadeInUp} className="mb-8">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-1">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">

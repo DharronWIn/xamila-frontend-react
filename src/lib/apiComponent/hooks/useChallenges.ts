@@ -3,22 +3,23 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../apiClient';
 import { challengeEndpoints, userChallengeEndpoints } from '../endpoints';
 import {
-    Challenge,
-    ChallengeQueryParams,
-    CreateChallengeDto,
-    UpdateChallengeDto,
-    JoinChallengeDto,
-    AddTransactionDto,
-    AbandonChallengeDto,
-    UpdateGoalDto,
-    ConfigureGoalDto,
-    ChallengeParticipant,
-    ChallengeTransaction,
-    ChallengeStats,
-    CollectiveProgress,
-    LeaderboardEntry,
-    Milestone,
-    PaginatedResponse
+  Challenge,
+  CurrentChallengeResponse,
+  ChallengeQueryParams,
+  CreateChallengeDto,
+  UpdateChallengeDto,
+  JoinChallengeDto,
+  AddTransactionDto,
+  AbandonChallengeDto,
+  UpdateGoalDto,
+  ConfigureGoalDto,
+  ChallengeParticipant,
+  ChallengeTransaction,
+  ChallengeStats,
+  CollectiveProgress,
+  LeaderboardEntry,
+  Milestone,
+  PaginatedResponse
 } from '../types';
 
 // ==================== CHALLENGES HOOKS ====================
@@ -29,7 +30,7 @@ export const useCurrentChallengeQuery = (userId: string) => {
     queryKey: ['currentChallenge', userId],
     queryFn: async () => {
       if (!userId) return null;
-      const response = await api.get<Challenge>(userChallengeEndpoints.currentChallenge(userId));
+      const response = await api.get<CurrentChallengeResponse>(userChallengeEndpoints.currentChallenge(userId));
       return response;
     },
     enabled: !!userId,
@@ -162,10 +163,30 @@ export const useChallenges = () => {
     }
   }, []);
 
+  // Get first active challenge
+  const getFirstActiveChallenge = useCallback(async (): Promise<unknown> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get<unknown>(challengeEndpoints.firstActive, { isPublicRoute: true });
+      return response;
+    } catch (err: unknown) {
+      // If no active challenge exists, return null instead of throwing
+      const apiError = err as { response?: { status: number } };
+      if (apiError.response?.status === 404) {
+        return null;
+      }
+      setError(err instanceof Error ? err.message : 'Failed to fetch first active challenge');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Get current user participation
   const getCurrentParticipation = useCallback(async (userId: string) => {
     try {
-      const response = await api.get<{ data: unknown }>(userChallengeEndpoints.currentChallenge(userId));
+      const response = await api.get<{ data: Challenge | unknown }>(userChallengeEndpoints.currentChallenge(userId));
       return response.data;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to fetch current participation');
@@ -203,6 +224,7 @@ export const useChallenges = () => {
     updateChallenge,
     deleteChallenge,
     getChallengeStats,
+    getFirstActiveChallenge,
     getCurrentParticipation,
     joinChallenge,
   };
@@ -434,6 +456,178 @@ export const useChallengeGoals = (challengeId: string) => {
 };
 
 // ==================== COLLECTIVE PROGRESS HOOKS ====================
+
+// Hook pour les endpoints /current/collective/ (ne nécessite pas de challengeId)
+export const useCurrentCollectiveProgress = () => {
+  const [progressData, setProgressData] = useState<{
+    challenge: {
+      id: string;
+      title: string;
+      type: string;
+      startDate: string;
+      endDate: string;
+    };
+    progress: {
+      totalParticipants: number;
+      totalAmountSaved: number;
+      collectiveTarget: number;
+      averageProgress: number;
+      completionRate: number;
+      remainingAmount: number;
+      daysRemaining: number;
+    };
+    achievements?: Array<{
+      id: string;
+      title: string;
+      description: string;
+      type: string;
+      value: number;
+      target: number;
+      isUnlocked: boolean;
+      badge?: string;
+      rarity: number;
+    }>;
+    lastUpdated: string;
+  } | null>(null);
+  
+  const [leaderboardData, setLeaderboardData] = useState<{
+    leaderboard: Array<{
+      rank: number;
+      userId: string;
+      userName: string;
+      currentAmount: number;
+      targetAmount: number;
+      progressPercentage: number;
+      consistency?: number;
+      joinedAt: string;
+      lastTransactionAt?: string;
+      transactionCount?: number;
+      level?: number;
+      totalXP?: number;
+      userRank?: string;
+      pictureProfilUrl?: string;
+      firstName?: string;
+      lastName?: string;
+    }>;
+    meta: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+    sortBy: string;
+    userRank: number | null;
+    lastUpdated: string;
+  } | null>(null);
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const getCurrentCollectiveProgress = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get<{
+        challenge: {
+          id: string;
+          title: string;
+          type: string;
+          startDate: string;
+          endDate: string;
+        };
+        progress: {
+          totalParticipants: number;
+          totalAmountSaved: number;
+          collectiveTarget: number;
+          averageProgress: number;
+          completionRate: number;
+          remainingAmount: number;
+          daysRemaining: number;
+        };
+        achievements?: Array<{
+          id: string;
+          title: string;
+          description: string;
+          type: string;
+          value: number;
+          target: number;
+          isUnlocked: boolean;
+          badge?: string;
+          rarity: number;
+        }>;
+        lastUpdated: string;
+      }>(challengeEndpoints.currentCollectiveProgress);
+      setProgressData(response);
+      return response;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch collective progress');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getCurrentLeaderboard = useCallback(async (
+    sortBy: 'progress' | 'amount' | 'consistency' = 'progress',
+    limit: number = 10,
+    page: number = 1
+  ) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const queryParams = `?sortBy=${sortBy}&limit=${limit}&page=${page}`;
+      const response = await api.get<{
+        leaderboard: Array<{
+          rank: number;
+          userId: string;
+          userName: string;
+          currentAmount: number;
+          targetAmount: number;
+          progressPercentage: number;
+          consistency?: number;
+          joinedAt: string;
+          lastTransactionAt?: string;
+          transactionCount?: number;
+          level?: number;
+          totalXP?: number;
+          userRank?: string;
+          pictureProfilUrl?: string;
+          firstName?: string;
+          lastName?: string;
+        }>;
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+          hasNextPage: boolean;
+          hasPreviousPage: boolean;
+        };
+        sortBy: string;
+        userRank: number | null;
+        lastUpdated: string;
+      }>(`${challengeEndpoints.currentLeaderboard}${queryParams}`);
+      setLeaderboardData(response);
+      return response;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch leaderboard');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    progressData,
+    leaderboardData,
+    isLoading,
+    error,
+    getCurrentCollectiveProgress,
+    getCurrentLeaderboard,
+  };
+};
 
 export const useCollectiveProgress = (challengeId: string) => {
   const [progress, setProgress] = useState<CollectiveProgress | null>(null);

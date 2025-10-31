@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { ThemeSelector } from "@/components/ui/theme-selector";
 import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
 import { LogIn, Home, LogOut } from "lucide-react";
-import logoXAmila from "@/assets/images/logo-x-amila.png";
+import logoApp from "@/assets/images/logo-challenge-epargne.jpg";
 
 const Index = () => {
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
   // Removed automatic redirect - users should be able to view homepage when logged in
@@ -61,7 +61,7 @@ const Index = () => {
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <img 
-              src={logoXAmila} 
+              src={logoApp} 
               alt="X AMILA" 
               className="h-20 w-auto" 
             />

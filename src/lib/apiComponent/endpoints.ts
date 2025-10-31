@@ -3,10 +3,13 @@ const root = {
   auth: '/auth',
   users: '/users',
   challenges: '/challenges',
+  defis: '/defis',
   financial: '/financial',
   social: '/social',
   notifications: '/notifications',
   resources: '/resources',
+  userResources: '/user-resources',
+  coachingRequests: '/coaching-requests',
   savings: '/savings',
   bankAccounts: '/bank-accounts',
   settings: '/settings',
@@ -15,6 +18,7 @@ const root = {
   mobileMoney: '/mobile-money',
   payments: '/payments',
   avatars: '/avatars',
+  gamification: '/gamification',
 }
 
 // ==================== AUTHENTICATION ENDPOINTS ====================
@@ -47,6 +51,9 @@ export const authEndpoints = {
   // Token Management
   refreshToken: `${root.auth}/refresh-token`,
   
+  // Countries
+  countries: `${root.auth}/countries`,
+  
   // Testing
   testEmail: `${root.auth}/test-email`,
 }
@@ -54,6 +61,7 @@ export const authEndpoints = {
 // ==================== USERS ENDPOINTS ====================
 export const userEndpoints = {
   profile: `${root.users}/profile`,
+  profilePublic: (userId: string) => `${root.users}/${userId}/profile-public`,
   stats: `${root.users}/stats`,
   activity: `${root.users}/activity`,
   uploadAvatar: `${root.users}/upload-avatar`,
@@ -76,6 +84,7 @@ export const challengeEndpoints = {
   create: `${root.challenges}`,
   update: (id: string) => `${root.challenges}/${id}`,
   delete: (id: string) => `${root.challenges}/${id}`,
+  firstActive: `${root.challenges}/active/first`,
   
   // Current User Challenge
   current: `${root.challenges}/current`,
@@ -94,6 +103,7 @@ export const challengeEndpoints = {
   // Transactions
   transactions: (challengeId: string) => `${root.challenges}/${challengeId}/transactions`,
   addTransaction: (challengeId: string) => `${root.challenges}/${challengeId}/transactions`,
+  deleteTransaction: (challengeId: string, transactionId: string) => `${root.challenges}/${challengeId}/transactions/${transactionId}`,
   transactionStats: (challengeId: string) => `${root.challenges}/${challengeId}/transactions/stats`,
   
   // Goals
@@ -117,8 +127,47 @@ export const userChallengeEndpoints = {
   challengeStats: (userId: string) => `${root.users}/${userId}/challenges/stats`,
 }
 
+// ==================== DEFIS ENDPOINTS ====================
+export const defiEndpoints = {
+  // Defi CRUD
+  list: `${root.defis}`,
+  stats: `${root.defis}/stats`,
+  details: (id: string) => `${root.defis}/${id}`,
+  create: `${root.defis}`,
+  update: (id: string) => `${root.defis}/${id}`,
+  delete: (id: string) => `${root.defis}/${id}`,
+  
+  // Participants
+  participants: (defiId: string) => `${root.defis}/${defiId}/participants`,
+  joinDefi: (defiId: string) => `${root.defis}/${defiId}/participants`,
+  leaveDefi: (defiId: string) => `${root.defis}/${defiId}/participants/me`,
+  abandonDefi: (defiId: string) => `${root.defis}/${defiId}/participants/me/abandon`,
+  
+  // Transactions
+  transactions: (defiId: string) => `${root.defis}/${defiId}/transactions`,
+  addTransaction: (defiId: string) => `${root.defis}/${defiId}/transactions`,
+  transactionStats: (defiId: string) => `${root.defis}/${defiId}/transactions/stats`,
+  
+  // Goals
+  configureGoal: (defiId: string) => `${root.defis}/${defiId}/goals/configure`,
+  myGoal: (defiId: string) => `${root.defis}/${defiId}/goals/me`,
+  updateGoal: (defiId: string) => `${root.defis}/${defiId}/goals/me`,
+}
+
+// ==================== USER DEFIS ENDPOINTS ====================
+export const userDefiEndpoints = {
+  userDefis: (userId: string) => `${root.users}/${userId}/defis`,
+  defiStats: (userId: string) => `${root.users}/${userId}/defis/stats`,
+}
+
 // ==================== FINANCIAL ENDPOINTS ====================
 export const financialEndpoints = {
+  // Flux Financier
+  fluxBalance: `${root.financial}/flux/balance`,
+  fluxSummary: `${root.financial}/flux/summary`,
+  fluxToggle: `${root.financial}/flux/toggle`,
+  fluxChartByCategory: `${root.financial}/flux/chart-by-category`,
+  
   // Transactions
   transactions: `${root.financial}/transactions`,
   createTransaction: `${root.financial}/transactions`,
@@ -130,6 +179,7 @@ export const financialEndpoints = {
   transactionStats: `${root.financial}/transactions/stats`,
   chartData: `${root.financial}/transactions/charts`,
   categories: `${root.financial}/transactions/categories`,
+  categoriesWithType: `${root.financial}/categories`,
 }
 
 // ==================== SOCIAL ENDPOINTS ====================
@@ -169,6 +219,27 @@ export const resourceEndpoints = {
   details: (id: string) => `${root.resources}/${id}`,
   download: (id: string) => `${root.resources}/download/${id}`,
 }
+
+// ==================== COACHING REQUESTS ENDPOINTS ====================
+export const coachingEndpoints = {
+  create: `${root.coachingRequests}`,
+  myRequests: `${root.coachingRequests}/me`,
+}
+
+// ==================== USER RESOURCES ENDPOINTS ====================
+export const userResourceEndpoints = {
+  list: (params?: { type?: string; challengeId?: string }) => {
+    const qp = new URLSearchParams();
+    if (params?.type) qp.append('type', params.type);
+    if (params?.challengeId) qp.append('challengeId', params.challengeId);
+    const query = qp.toString();
+    return `${root.userResources}${query ? `?${query}` : ''}`;
+  },
+  details: (resourceId: string) => `${root.userResources}/${resourceId}`,
+  download: (resourceId: string) => `${root.userResources}/${resourceId}/download`,
+  delete: (resourceId: string) => `${root.userResources}/${resourceId}`,
+  downloadCharte: `documents/charte-epargne/download`,
+};
 
 // ==================== SAVINGS ENDPOINTS ====================
 export const savingsEndpoints = {
@@ -238,6 +309,7 @@ export const adminEndpoints = {
   rejectUser: (id: string) => `${root.admin}/users/${id}/reject`,
   upgradeUserToPremium: (id: string) => `${root.admin}/users/${id}/upgrade-premium`,
   approveAndUpgradeToPremium: (id: string) => `${root.admin}/users/${id}/approve-and-upgrade-premium`,
+  regenerateUserAccess: (id: string) => `${root.admin}/users/${id}/regenerate-access`,
   
   // System Settings
   settings: `${root.admin}/settings`,
@@ -267,16 +339,96 @@ export const adminEndpoints = {
   notificationStats: `${root.admin}/notifications/stats`,
   
   // Challenges Management
-  challenges: `${root.challenges}`,
-  challengeStats: `${root.challenges}/stats`,
-  challengeDetails: (id: string) => `${root.challenges}/${id}`,
-  createChallenge: `${root.challenges}`,
-  updateChallenge: (id: string) => `${root.challenges}/${id}`,
-  deleteChallenge: (id: string) => `${root.challenges}/${id}`,
-  challengeParticipants: (id: string) => `${root.challenges}/${id}/participants`,
-  challengeTransactions: (id: string) => `${root.challenges}/${id}/transactions`,
-  challengeLeaderboard: (id: string) => `${root.challenges}/${id}/collective/leaderboard`,
-  challengeProgress: (id: string) => `${root.challenges}/${id}/collective/progress`,
+  challenges: `${root.admin}/challenges`,
+  challengeStats: `${root.admin}/challenges/stats`,
+  challengeDetails: (id: string) => `${root.admin}/challenges/${id}`,
+  createChallenge: `${root.admin}/challenges`,
+  updateChallenge: (id: string) => `${root.admin}/challenges/${id}`,
+  deleteChallenge: (id: string) => `${root.admin}/challenges/${id}`,
+  toggleChallengeActive: (id: string) => `${root.admin}/challenges/${id}/toggle-active`,
+  challengeParticipants: (id: string) => `${root.admin}/challenges/${id}/participants`,
+  challengeTransactions: (id: string) => `${root.admin}/challenges/${id}/transactions`,
+
+  // Defis Management
+  defis: `${root.admin}/defis`,
+  defisStats: `${root.admin}/defis/stats`,
+  defiDetails: (id: string) => `${root.admin}/defis/${id}`,
+  createDefi: `${root.admin}/defis`,
+  updateDefi: (id: string) => `${root.admin}/defis/${id}`,
+  deleteDefi: (id: string) => `${root.admin}/defis/${id}`,
+  toggleDefiOfficial: (id: string) => `${root.admin}/defis/${id}/toggle-official`,
+  updateDefiStatus: (id: string) => `${root.admin}/defis/${id}/status`,
+  defiParticipants: (id: string) => `${root.admin}/defis/${id}/participants`,
+  defiTransactions: (id: string) => `${root.admin}/defis/${id}/transactions`,
+
+  // Financial Transactions Management
+  financialTransactions: `${root.admin}/financial/transactions`,
+  financialTransactionsStats: `${root.admin}/financial/transactions/stats`,
+  financialTransactionDetails: (id: string) => `${root.admin}/financial/transactions/${id}`,
+  updateFinancialTransaction: (id: string) => `${root.admin}/financial/transactions/${id}`,
+  deleteFinancialTransaction: (id: string) => `${root.admin}/financial/transactions/${id}`,
+  financialTransactionsByUser: (userId: string) => `${root.admin}/financial/transactions/by-user/${userId}`,
+  financialGlobalFlux: `${root.admin}/financial/flux/global`,
+
+  // Savings Goals Management
+  savingsGoals: `${root.admin}/savings/goals`,
+  savingsGoalDetails: (id: string) => `${root.admin}/savings/goals/${id}`,
+  updateSavingsGoal: (id: string) => `${root.admin}/savings/goals/${id}`,
+  deleteSavingsGoal: (id: string) => `${root.admin}/savings/goals/${id}`,
+  savingsChallenges: `${root.admin}/savings/challenges`,
+  savingsChallengeDetails: (id: string) => `${root.admin}/savings/challenges/${id}`,
+  savingsStats: `${root.admin}/savings/stats`,
+  savingsCollectiveProgress: `${root.admin}/savings/collective-progress`,
+
+  // Social (Posts & Comments) Management
+  socialPosts: `${root.admin}/social/posts`,
+  socialPostDetails: (id: string) => `${root.admin}/social/posts/${id}`,
+  updateSocialPost: (id: string) => `${root.admin}/social/posts/${id}`,
+  deleteSocialPost: (id: string) => `${root.admin}/social/posts/${id}`,
+  toggleSocialPostVisible: (id: string) => `${root.admin}/social/posts/${id}/toggle-visible`,
+  socialComments: `${root.admin}/social/comments`,
+  deleteSocialComment: (id: string) => `${root.admin}/social/comments/${id}`,
+  socialStats: `${root.admin}/social/stats`,
+  socialReports: `${root.admin}/social/reports`,
+
+  // Gamification Management
+  gamificationTrophies: `${root.admin}/gamification/trophies`,
+  gamificationTrophyDetails: (id: string) => `${root.admin}/gamification/trophies/${id}`,
+  createGamificationTrophy: `${root.admin}/gamification/trophies`,
+  updateGamificationTrophy: (id: string) => `${root.admin}/gamification/trophies/${id}`,
+  deleteGamificationTrophy: (id: string) => `${root.admin}/gamification/trophies/${id}`,
+  gamificationBadges: `${root.admin}/gamification/badges`,
+  gamificationBadgeDetails: (id: string) => `${root.admin}/gamification/badges/${id}`,
+  createGamificationBadge: `${root.admin}/gamification/badges`,
+  updateGamificationBadge: (id: string) => `${root.admin}/gamification/badges/${id}`,
+  deleteGamificationBadge: (id: string) => `${root.admin}/gamification/badges/${id}`,
+  gamificationUserData: (userId: string) => `${root.admin}/gamification/users/${userId}`,
+  deleteUserTrophy: (userId: string, trophyId: string) => `${root.admin}/gamification/users/${userId}/trophies/${trophyId}`,
+  gamificationStats: `${root.admin}/gamification/stats`,
+  gamificationLeaderboard: `${root.admin}/gamification/leaderboard`,
+
+  // FineoPay Payments Management
+  fineopayPayments: `${root.admin}/fineopay/payments`,
+  fineopayPaymentsStats: `${root.admin}/fineopay/payments/stats`,
+  fineopayPaymentDetails: (id: string) => `${root.admin}/fineopay/payments/${id}`,
+  fineopayPaymentsByUser: (userId: string) => `${root.admin}/fineopay/payments/by-user/${userId}`,
+  fineopayPaymentsByStatus: `${root.admin}/fineopay/payments/by-status`,
+  fineopayPaymentsRevenue: `${root.admin}/fineopay/payments/revenue`,
+  fineopayPaymentByReference: (reference: string) => `${root.admin}/fineopay/payments/reference/${reference}`,
+
+  // Subscriptions Management
+  subscriptions: `${root.admin}/subscriptions`,
+  subscriptionsStats: `${root.admin}/subscriptions/stats`,
+  subscriptionsByUser: (userId: string) => `${root.admin}/subscriptions/by-user/${userId}`,
+  subscriptionDetails: (id: string) => `${root.admin}/subscriptions/${id}`,
+  cancelSubscription: (id: string) => `${root.admin}/subscriptions/${id}/cancel`,
+  extendSubscription: (id: string) => `${root.admin}/subscriptions/${id}/extend`,
+  subscriptionsRevenue: `${root.admin}/subscriptions/revenue`,
+
+  // Coaching Requests Management
+  coachingRequests: `${root.admin}/coaching-requests`,
+  coachingRequestsQuery: (query: string) => `${root.admin}/coaching-requests${query ? `?${query}` : ''}`,
+  updateCoachingRequestStatus: (id: string) => `${root.admin}/coaching-requests/${id}/status`,
 }
 
 // ==================== AVATAR ENDPOINTS ====================
@@ -322,6 +474,27 @@ export const paymentEndpoints = {
 
   // fineopay
   fineopayCheckoutLink: `fineopay/checkout-link`,
+}
+
+// ==================== GAMIFICATION ENDPOINTS ====================
+export const gamificationEndpoints = {
+  // Dashboard
+  dashboard: `${root.gamification}/dashboard`,
+  
+  // Trophées
+  checkTrophies: `${root.gamification}/trophies/check`,
+  trophies: `${root.gamification}/trophies`,
+  myTrophies: `${root.gamification}/trophies/my`,
+  trophiesProgress: `${root.gamification}/trophies/progress`,
+  
+  // Badges
+  badges: `${root.gamification}/badges`,
+  myBadges: `${root.gamification}/badges/my`,
+  
+  // XP & Niveaux
+  level: `${root.gamification}/level`,
+  stats: `${root.gamification}/stats`,
+  xpHistory: `${root.gamification}/xp/history`,
 }
 
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Trophy,
   Calendar,
@@ -8,19 +8,20 @@ import {
   Clock,
   Plus,
   CheckCircle,
-  AlertCircle, TrendingUp,
+  AlertCircle,
+  TrendingUp,
   Award,
   Banknote,
   PiggyBank,
-  BarChart3
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/lib/apiComponent/hooks/useAuth';
-import { SavingsChallenge } from '@/types/challenge';
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+  BarChart3,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
+import { SavingsChallenge } from "@/types/challenge";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface ChallengeCardProps {
   challenge: SavingsChallenge;
@@ -33,15 +34,15 @@ interface ChallengeCardProps {
   hasAbandoned?: boolean; // Si l'utilisateur a abandonné ce challenge
 }
 
-export const ChallengeCard = ({ 
-  challenge, 
-  onJoin, 
-  onViewDetails, 
+export const ChallengeCard = ({
+  challenge,
+  onJoin,
+  onViewDetails,
   onGoToMyChallenge,
   onViewCollectiveProgress,
   showJoinButton = true,
   isJoined = false,
-  hasAbandoned = false
+  hasAbandoned = false,
 }: ChallengeCardProps) => {
   const { user: currentUser } = useAuth();
   const [isJoining, setIsJoining] = useState(false);
@@ -49,45 +50,71 @@ export const ChallengeCard = ({
   const now = new Date();
   const startDate = new Date(challenge.startDate);
   const endDate = new Date(challenge.endDate);
-  
+
   // Logique simplifiée basée sur les dates uniquement
   const isChallengeNotStarted = now < startDate; // Challenge pas encore commencé
   const isChallengeInProgress = now >= startDate && now <= endDate; // Challenge en cours
   const isChallengeFinished = now > endDate; // Challenge terminé
-  
+
   // Conditions simplifiées
   const canJoin = isChallengeNotStarted && !isJoined && !hasAbandoned;
-  
+
   // Debug logs
-  console.log('ChallengeCard - Challenge:', challenge.title, 'isJoined:', isJoined, 'hasAbandoned:', hasAbandoned, 'canJoin:', canJoin, 'isChallengeNotStarted:', isChallengeNotStarted, 'showJoinButton:', showJoinButton, 'willShowButtons:', showJoinButton && (isJoined || canJoin));
+  console.log(
+    "ChallengeCard - Challenge:",
+    challenge.title,
+    "isJoined:",
+    isJoined,
+    "hasAbandoned:",
+    hasAbandoned,
+    "canJoin:",
+    canJoin,
+    "isChallengeNotStarted:",
+    isChallengeNotStarted,
+    "showJoinButton:",
+    showJoinButton,
+    "willShowButtons:",
+    showJoinButton && (isJoined || canJoin)
+  );
 
   const getStatusBadge = () => {
     if (isChallengeNotStarted) {
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-        <Clock className="w-3 h-3 mr-1" />
-        À venir
-      </Badge>;
+      return (
+        <Badge
+          variant="outline"
+          className="bg-blue-50 text-blue-700 border-blue-200"
+        >
+          <Clock className="w-3 h-3 mr-1" />À venir
+        </Badge>
+      );
     } else if (isChallengeInProgress) {
-      return <Badge className="bg-green-100 text-green-800 border-green-200">
-        <TrendingUp className="w-3 h-3 mr-1" />
-        En cours
-      </Badge>;
+      return (
+        <Badge className="bg-green-100 text-green-800 border-green-200">
+          <TrendingUp className="w-3 h-3 mr-1" />
+          En cours
+        </Badge>
+      );
     } else if (isChallengeFinished) {
-      return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
-        <CheckCircle className="w-3 h-3 mr-1" />
-        Terminé
-      </Badge>;
+      return (
+        <Badge
+          variant="outline"
+          className="bg-gray-50 text-gray-700 border-gray-200"
+        >
+          <CheckCircle className="w-3 h-3 mr-1" />
+          Terminé
+        </Badge>
+      );
     }
     return <Badge variant="outline">Inconnu</Badge>;
   };
 
   const getTypeIcon = () => {
     switch (challenge.type) {
-      case 'monthly':
+      case "monthly":
         return <Calendar className="w-4 h-4" />;
-      case 'weekly':
+      case "weekly":
         return <Target className="w-4 h-4" />;
-      case 'daily':
+      case "daily":
         return <Clock className="w-4 h-4" />;
       default:
         return <Trophy className="w-4 h-4" />;
@@ -96,20 +123,20 @@ export const ChallengeCard = ({
 
   const getTypeLabel = () => {
     switch (challenge.type) {
-      case 'monthly':
-        return 'Mensuel';
-      case 'weekly':
-        return 'Hebdomadaire';
-      case 'daily':
-        return 'Quotidien';
+      case "monthly":
+        return "Mensuel";
+      case "weekly":
+        return "Hebdomadaire";
+      case "daily":
+        return "Quotidien";
       default:
-        return 'Personnalisé';
+        return "Personnalisé";
     }
   };
 
   const handleJoin = async () => {
     if (!canJoin) return;
-    
+
     setIsJoining(true);
     try {
       if (onJoin) {
@@ -122,11 +149,17 @@ export const ChallengeCard = ({
 
   const getTimeInfo = () => {
     if (isChallengeNotStarted) {
-      return `Commence ${formatDistanceToNow(startDate, { addSuffix: true, locale: fr })}`;
+      return `Commence ${formatDistanceToNow(startDate, {
+        addSuffix: true,
+        locale: fr,
+      })}`;
     } else if (isChallengeInProgress) {
-      return `Se termine ${formatDistanceToNow(endDate, { addSuffix: true, locale: fr })}`;
+      return `Se termine ${formatDistanceToNow(endDate, {
+        addSuffix: true,
+        locale: fr,
+      })}`;
     } else {
-      return 'Challenge terminé';
+      return "Challenge terminé";
     }
   };
 
@@ -153,11 +186,13 @@ export const ChallengeCard = ({
                 </div>
               </div>
             </div>
-            
+
             {challenge.rewards.length > 0 && (
               <div className="flex items-center space-x-1 flex-shrink-0">
                 <Award className="w-4 h-4 text-yellow-500" />
-                <span className="text-xs text-gray-500">{challenge.rewards.length} récompenses</span>
+                <span className="text-xs text-gray-500">
+                  {challenge.rewards.length} récompenses
+                </span>
               </div>
             )}
           </div>
@@ -182,17 +217,19 @@ export const ChallengeCard = ({
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
                 <Users className="w-4 h-4 text-blue-600" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-gray-500 font-medium">Participants</p>
+                <p className="text-xs text-gray-500 font-medium">
+                  Participants
+                </p>
                 <p className="font-semibold text-gray-900 text-sm sm:text-base">
                   {challenge.participants}
-                  {challenge.maxParticipants && `/${challenge.maxParticipants}`}
                 </p>
+
               </div>
             </div>
           </div>
@@ -203,16 +240,20 @@ export const ChallengeCard = ({
               <Clock className="w-4 h-4 flex-shrink-0" />
               <span className="truncate">{getTimeInfo()}</span>
             </div>
-            
+
             {/* Dates exactes */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500">
               <div className="flex items-center space-x-2">
                 <Calendar className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">Début: {startDate.toLocaleDateString('fr-FR')}</span>
+                <span className="truncate">
+                  Début: {startDate.toLocaleDateString("fr-FR")}
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <Calendar className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">Fin: {endDate.toLocaleDateString('fr-FR')}</span>
+                <span className="truncate">
+                  Fin: {endDate.toLocaleDateString("fr-FR")}
+                </span>
               </div>
             </div>
           </div>
@@ -223,7 +264,11 @@ export const ChallengeCard = ({
               <p className="text-xs font-medium text-gray-700">Récompenses :</p>
               <div className="flex flex-wrap gap-1">
                 {challenge.rewards.slice(0, 3).map((reward, index) => (
-                  <Badge key={index} variant="outline" className="text-xs px-2 py-1">
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className="text-xs px-2 py-1"
+                  >
                     {reward}
                   </Badge>
                 ))}
@@ -290,10 +335,12 @@ export const ChallengeCard = ({
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-700 leading-relaxed">
                 {(() => {
-                  if (isChallengeFinished) return 'Ce challenge est terminé.';
-                  if (isChallengeInProgress) return 'Ce challenge a déjà commencé. Rejoignez le prochain !';
-                  if (hasAbandoned) return 'Vous avez abandonné ce challenge précédemment.';
-                  return 'Impossible de rejoindre ce challenge.';
+                  if (isChallengeFinished) return "Ce challenge est terminé.";
+                  if (isChallengeInProgress)
+                    return "Ce challenge a déjà commencé. Rejoignez le prochain !";
+                  if (hasAbandoned)
+                    return "Vous avez abandonné ce challenge précédemment.";
+                  return "Impossible de rejoindre ce challenge.";
                 })()}
               </p>
             </div>
@@ -309,7 +356,9 @@ export const ChallengeCard = ({
                 </p>
                 {challenge.userParticipation?.currentAmount && (
                   <p className="text-xs text-green-600 mt-1 leading-relaxed">
-                    Progression : {challenge.userParticipation.currentAmount.toLocaleString()}€ sur {challenge.targetAmount.toLocaleString()}€
+                    Progression :{" "}
+                    {challenge.userParticipation.currentAmount.toLocaleString()}
+                    € sur {challenge.targetAmount.toLocaleString()}€
                   </p>
                 )}
               </div>

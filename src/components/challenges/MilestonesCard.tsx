@@ -60,15 +60,19 @@ const MilestonesCard = ({ milestones, isLoading }: MilestonesCardProps) => {
           <span>Jalons Collectifs</span>
         </CardTitle>
         <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <span>{milestones.achievedMilestones} / {milestones.totalMilestones} atteints</span>
+          <span>
+            {milestones.achievedMilestones || 0} / {milestones.totalMilestones || 0} atteints
+          </span>
           <Badge variant="outline" className="text-xs">
-            {Math.round((milestones.achievedMilestones / milestones.totalMilestones) * 100)}% complété
+            {milestones.totalMilestones && milestones.totalMilestones > 0
+              ? Math.round(((milestones.achievedMilestones || 0) / milestones.totalMilestones) * 100)
+              : 0}% complété
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {milestones.milestones.map((milestone, index) => (
+          {(milestones.milestones || []).map((milestone, index) => (
             <motion.div
               key={milestone.id}
               initial={{ opacity: 0, y: 10 }}
@@ -82,13 +86,13 @@ const MilestonesCard = ({ milestones, isLoading }: MilestonesCardProps) => {
                   <div>
                     <h4 className="font-medium text-gray-900">{milestone.name}</h4>
                     <p className="text-sm text-gray-600">
-                      {milestone.currentAmount.toLocaleString()}€ / {milestone.targetAmount.toLocaleString()}€
+                      {(milestone.currentAmount || 0).toLocaleString()}€ / {(milestone.targetAmount || 0).toLocaleString()}€
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-semibold text-gray-900">
-                    {milestone.targetPercentage}%
+                    {milestone.targetPercentage || 0}%
                   </div>
                   <div className="text-xs text-gray-500">objectif</div>
                 </div>
@@ -97,10 +101,18 @@ const MilestonesCard = ({ milestones, isLoading }: MilestonesCardProps) => {
               <div className="space-y-2">
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>Progression</span>
-                  <span>{Math.round((milestone.currentAmount / milestone.targetAmount) * 100)}%</span>
+                  <span>
+                    {milestone.targetAmount && milestone.targetAmount > 0
+                      ? Math.round(((milestone.currentAmount || 0) / milestone.targetAmount) * 100)
+                      : 0}%
+                  </span>
                 </div>
                 <Progress 
-                  value={(milestone.currentAmount / milestone.targetAmount) * 100} 
+                  value={
+                    milestone.targetAmount && milestone.targetAmount > 0
+                      ? ((milestone.currentAmount || 0) / milestone.targetAmount) * 100
+                      : 0
+                  } 
                   className="h-2"
                 />
               </div>

@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/apiComponent/hooks/useAuth";
 import { useTransactions, useTransactionStats } from "@/lib/apiComponent/hooks/useFinancial";
 import { Transaction } from "@/lib/apiComponent/types";
+import { CategorySelector } from "@/components/flux/CategorySelector";
 import { usePremiumProtection } from "@/hooks/usePremiumProtection";
 import PremiumUpgradeModal from "@/components/premium/PremiumUpgradeModal";
 import { toast } from "sonner";
@@ -626,7 +627,7 @@ const Transactions = () => {
       </motion.div>
 
       {/* Charts Section */}
-      {isPremium && monthlyStats.length > 0 && (
+      {isPremium && (
         <motion.div variants={fadeInUp}>
           <Card>
             <CardHeader>
@@ -954,8 +955,7 @@ function TransactionForm({ transaction, onSubmit, isLoading = false }: Transacti
     onSubmit(formData);
   };
 
-  const incomeCategories = ['Salaire', 'Freelance', 'Bonus', 'Investissements', 'Autres revenus'];
-  const expenseCategories = ['Logement', 'Transport', 'Nourriture', 'Loisirs', 'Santé', 'Shopping', 'Éducation', 'Autres dépenses'];
+  // Categories are now handled by CategorySelector component
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -975,7 +975,7 @@ function TransactionForm({ transaction, onSubmit, isLoading = false }: Transacti
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="amount">Montant (€)</Label>
+          <Label htmlFor="amount">Montant (FCFA)</Label>
           <Input
             id="amount"
             type="number"
@@ -990,18 +990,12 @@ function TransactionForm({ transaction, onSubmit, isLoading = false }: Transacti
       
       <div className="space-y-2">
         <Label htmlFor="category">Catégorie</Label>
-        <Select value={formData.category} onValueChange={(value) => 
-          setFormData({...formData, category: value})
-        }>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner une catégorie" />
-          </SelectTrigger>
-          <SelectContent>
-            {(formData.type === 'INCOME' ? incomeCategories : expenseCategories).map((category) => (
-              <SelectItem key={category} value={category}>{category}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <CategorySelector
+          type={formData.type}
+          value={formData.category}
+          onValueChange={(value) => setFormData({...formData, category: value})}
+          placeholder="Sélectionner une catégorie"
+        />
       </div>
       
       <div className="space-y-2">

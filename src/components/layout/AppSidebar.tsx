@@ -10,7 +10,12 @@ import {
     LogOut,
     Trophy,
     MessageCircle, DollarSign,
-    Building2, Wallet
+    Building2, Wallet,
+    Medal,
+    Star,
+    Award,
+    ShoppingBag,
+    Receipt
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -32,14 +37,22 @@ import logo6Mois from "@/assets/images/logo-challenge-epargne.jpg";
 const userMenuItems = [
   { title: "Tableau de bord", url: "/user-dashboard", icon: Home, isPremium: false },
   { title: "Ressources", url: "/user-dashboard/resources", icon: FileText, isPremium: false },
-
-  //{ title: "Défis communautaires", url: "/user-dashboard/defis", icon: Trophy, isPremium: false },
+  { title: "Mes ressources", url: "/user-dashboard/my-resources", icon: FileText, isPremium: false },
+  { title: "Défis", url: "/user-dashboard/defis", icon: Trophy, isPremium: false },
+  { title: "Mes Défis", url: "/user-dashboard/mes-defis", icon: Target, isPremium: false },
   { title: "Challenges d'épargne", url: "/user-dashboard/challenges", icon: Target, isPremium: false },
   { title: "Mon Challenge", url: "/user-dashboard/my-challenge", icon: Wallet, isPremium: false },
-  { title: "Flux financier", url: "/user-dashboard/transactions", icon: TrendingUp, isPremium: true },
-  //{ title: "Challenge d'épargne", url: "/user-dashboard/savings", icon: Target, isPremium: true },
+  { title: "Mes finances", url: "/user-dashboard/transactions", icon: TrendingUp, isPremium: true },
   { title: "Progression collective", url: "/user-dashboard/collective-progress", icon: Trophy, isPremium: true },
+  { title: "Salle des Trophées", url: "/gamification/trophies", icon: Trophy, isPremium: false },
+  { title: "Classement", url: "/gamification/leaderboard", icon: Medal, isPremium: false },
   { title: "Compte bancaire", url: "/user-dashboard/bank-account", icon: CreditCard, isPremium: false },
+];
+
+const gamificationMenuItems = [
+  { title: "Gamification", url: "/gamification", icon: Star, isPremium: false },
+  { title: "Trophées", url: "/gamification/trophies", icon: Trophy, isPremium: false },
+  { title: "Classement", url: "/gamification/leaderboard", icon: Medal, isPremium: false },
 ];
 
 const adminMainItems = [
@@ -54,8 +67,13 @@ const adminManagementItems = [
   { title: "Objectifs d'épargne", url: "/admin-dashboard/savings", icon: Target, isPremium: false },
   { title: "Gestion sociale", url: "/admin-dashboard/social", icon: MessageCircle, isPremium: false },
   { title: "Gestion des challenges", url: "/admin-dashboard/challenges", icon: Trophy, isPremium: false },
+  { title: "Gestion des défis", url: "/admin-dashboard/defis", icon: Target, isPremium: false },
+  { title: "Gamification", url: "/admin-dashboard/gamification", icon: Award, isPremium: false },
+  { title: "Paiements FineoPay", url: "/admin-dashboard/fineopay", icon: Receipt, isPremium: false },
+  { title: "Abonnements", url: "/admin-dashboard/subscriptions", icon: ShoppingBag, isPremium: false },
   { title: "Notifications", url: "/admin-dashboard/notifications", icon: Bell, isPremium: false },
   { title: "Comptes bancaires", url: "/admin-dashboard/bank-accounts", icon: Building2, isPremium: false },
+  { title: "Demandes de coaching", url: "/admin-dashboard/coaching-requests", icon: HelpCircle, isPremium: false },
 ];
 
 const bottomMenuItems = [
@@ -172,6 +190,32 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Gamification Section - User Mode Only */}
+        {isUserMode && (
+          <SidebarGroup>
+            <SidebarGroupLabel>🏆 Gamification</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {gamificationMenuItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url} 
+                        end 
+                        className={getNavCls(item.url)}
+                        onClick={(e) => handleSidebarPremiumClick(e, item.url, item.isPremium)}
+                      >
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {/* Admin Management Modules */}
         {isAdminMode && (

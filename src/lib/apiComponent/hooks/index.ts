@@ -7,6 +7,9 @@ export * from './useAuth';
 // Challenge hooks
 export * from './useChallenges';
 
+// Defi hooks
+export * from './useDefis';
+
 // Financial hooks
 export * from './useFinancial';
 
@@ -21,6 +24,9 @@ export * from './useResources';
 
 // Savings hooks
 export * from './useSavings';
+
+// Gamification hooks
+export * from './useGamification';
 
 // ==================== CONVENIENCE RE-EXPORTS ====================
 // Re-export commonly used types and utilities

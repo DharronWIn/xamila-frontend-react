@@ -284,27 +284,40 @@ export interface DashboardStatsQuery {
 
 export interface DashboardStats {
   totalUsers: number;
+  totalAdmins: number;
+  totalGuests: number;
+  verifiedUsers: number;
   activeUsers: number;
   premiumUsers: number;
-  pendingUsers: number;
-  totalRevenue: number;
-  monthlyRevenue: number;
-  totalTransactions: number;
-  monthlyTransactions: number;
-  totalBankAccounts: number;
-  pendingBankAccounts: number;
-  totalResources: number;
-  totalNotifications: number;
-  monthlyNotifications: number;
+  newUsersToday: number;
+  newUsersThisWeek: number;
+  newUsersThisMonth: number;
   userGrowth: {
-    period: string;
+    date: string;
     count: number;
   }[];
-  revenueGrowth: {
+  systemHealth: {
+    status: string;
+    uptime: number;
+    database: string;
+    cache: string;
+  };
+  // Propriétés optionnelles pour compatibilité
+  pendingUsers?: number;
+  totalRevenue?: number;
+  monthlyRevenue?: number;
+  totalTransactions?: number;
+  monthlyTransactions?: number;
+  totalBankAccounts?: number;
+  pendingBankAccounts?: number;
+  totalResources?: number;
+  totalNotifications?: number;
+  monthlyNotifications?: number;
+  revenueGrowth?: {
     period: string;
     amount: number;
   }[];
-  transactionGrowth: {
+  transactionGrowth?: {
     period: string;
     count: number;
   }[];
@@ -608,6 +621,7 @@ export interface Challenge {
   id: string;
   title: string;
   description: string;
+  challengeRule?: string;
   type: 'MONTHLY' | 'WEEKLY' | 'DAILY' | 'CUSTOM';
   targetAmount?: number;
   duration?: number;
@@ -640,6 +654,7 @@ export interface Challenge {
 export interface CreateChallengeRequest {
   title: string;
   description: string;
+  challengeRule?: string;
   startDate: string;
   endDate: string;
   rewards: string[];
@@ -648,6 +663,7 @@ export interface CreateChallengeRequest {
 export interface UpdateChallengeRequest {
   title?: string;
   description?: string;
+  challengeRule?: string;
   startDate?: string;
   endDate?: string;
   rewards?: string[];
@@ -749,4 +765,693 @@ export interface ChallengeDetails {
     achievedAt: string;
     achievedBy: string;
   }>;
+}
+
+// ==================== DEFIS TYPES ====================
+
+export interface Defi {
+  id: string;
+  title: string;
+  description: string;
+  type: 'MONTHLY' | 'WEEKLY' | 'DAILY' | 'CUSTOM';
+  targetAmount?: number;
+  startDate: string;
+  endDate: string;
+  isOfficial: boolean;
+  status: 'UPCOMING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDefiRequest {
+  title: string;
+  description: string;
+  type: 'MONTHLY' | 'WEEKLY' | 'DAILY' | 'CUSTOM';
+  targetAmount?: number;
+  startDate: string;
+  endDate: string;
+  isOfficial?: boolean;
+}
+
+export interface UpdateDefiRequest {
+  title?: string;
+  description?: string;
+  type?: 'MONTHLY' | 'WEEKLY' | 'DAILY' | 'CUSTOM';
+  targetAmount?: number;
+  startDate?: string;
+  endDate?: string;
+  isOfficial?: boolean;
+  status?: 'UPCOMING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+}
+
+export interface DefiQueryParams {
+  page?: number;
+  limit?: number;
+  type?: 'MONTHLY' | 'WEEKLY' | 'DAILY' | 'CUSTOM';
+  status?: 'UPCOMING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  isOfficial?: boolean;
+  createdBy?: string;
+  search?: string;
+}
+
+export interface DefisListResponse {
+  defis: Defi[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface DefiStats {
+  total: number;
+  active: number;
+  completed: number;
+  upcoming: number;
+  cancelled: number;
+  totalParticipants: number;
+  totalAmountSaved: number;
+}
+
+export interface DefiParticipant {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+  };
+  defiId: string;
+  targetAmount: number;
+  currentAmount: number;
+  progress: number;
+  status: 'active' | 'completed' | 'abandoned';
+  joinedAt: string;
+  completedAt?: string;
+  abandonedAt?: string;
+}
+
+// ==================== FINANCIAL TRANSACTIONS TYPES ====================
+
+export interface FinancialTransaction {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  amount: number;
+  type: 'INCOME' | 'EXPENSE';
+  category: string;
+  description: string;
+  date: string;
+  isEpargne: boolean;
+  isLiberation: boolean;
+  challengeId?: string;
+  defiId?: string;
+  createdAt: string;
+}
+
+export interface FinancialTransactionQueryParams {
+  page?: number;
+  limit?: number;
+  type?: 'INCOME' | 'EXPENSE';
+  category?: string;
+  userId?: string;
+}
+
+export interface FinancialTransactionsListResponse {
+  transactions: FinancialTransaction[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface FinancialTransactionStats {
+  total: number;
+  income: {
+    total: number;
+    count: number;
+    average: number;
+  };
+  expense: {
+    total: number;
+    count: number;
+    average: number;
+  };
+  byCategory: Array<{
+    category: string;
+    total: number;
+    count: number;
+  }>;
+}
+
+export interface UpdateFinancialTransactionRequest {
+  amount?: number;
+  category?: string;
+  description?: string;
+  date?: string;
+}
+
+export interface FinancialGlobalFlux {
+  totalUsers: number;
+  totalIncome: number;
+  totalExpenses: number;
+  netBalance: number;
+}
+
+// ==================== SAVINGS GOALS TYPES ====================
+
+export interface SavingsGoal {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  title: string;
+  description?: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline?: string;
+  isCompleted: boolean;
+  createdAt: string;
+}
+
+export interface SavingsGoalQueryParams {
+  page?: number;
+  limit?: number;
+  userId?: string;
+}
+
+export interface SavingsGoalsListResponse {
+  goals: SavingsGoal[];
+  total: number;
+  page: number;
+}
+
+export interface UpdateSavingsGoalRequest {
+  title?: string;
+  targetAmount?: number;
+  deadline?: string;
+}
+
+export interface SavingsChallenge {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  title: string;
+  targetAmount: number;
+  currentAmount: number;
+  startDate: string;
+  endDate: string;
+  isCompleted: boolean;
+  createdAt: string;
+}
+
+export interface SavingsStats {
+  goals: {
+    total: number;
+    totalTargetAmount: number;
+    totalCurrentAmount: number;
+    averageTargetAmount: number;
+  };
+  challenges: {
+    total: number;
+    totalSaved: number;
+  };
+  global: {
+    totalTargetAmount: number;
+    totalCurrentAmount: number;
+  };
+}
+
+// ==================== SOCIAL TYPES ====================
+
+export interface SocialPost {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+  };
+  title?: string;
+  content: string;
+  type: 'SAVINGS_MILESTONE' | 'MOTIVATION' | 'TIP' | 'QUESTION' | 'CELEBRATION';
+  amount?: number;
+  goal?: string;
+  images: string[];
+  likes: number;
+  shares: number;
+  commentsCount: number;
+  likesCount: number;
+  createdAt: string;
+}
+
+export interface SocialPostQueryParams {
+  page?: number;
+  limit?: number;
+  type?: 'SAVINGS_MILESTONE' | 'MOTIVATION' | 'TIP' | 'QUESTION' | 'CELEBRATION';
+  userId?: string;
+}
+
+export interface SocialPostsListResponse {
+  posts: SocialPost[];
+  total: number;
+  page: number;
+}
+
+export interface UpdateSocialPostRequest {
+  title?: string;
+  content?: string;
+}
+
+export interface ToggleSocialPostVisibleRequest {
+  visible: boolean;
+}
+
+export interface SocialComment {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  postId: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface SocialCommentQueryParams {
+  page?: number;
+  limit?: number;
+  postId?: string;
+  userId?: string;
+}
+
+export interface SocialStats {
+  posts: {
+    total: number;
+    totalLikes: number;
+    totalShares: number;
+  };
+  comments: {
+    total: number;
+  };
+  likes: {
+    total: number;
+  };
+}
+
+// ==================== GAMIFICATION TYPES ====================
+
+export interface Trophy {
+  id: string;
+  name: string;
+  nameEn: string;
+  nameFr: string;
+  description?: string;
+  descriptionEn?: string;
+  descriptionFr?: string;
+  category: 'SAVINGS' | 'CHALLENGE' | 'SOCIAL' | 'GENERAL';
+  rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+  icon: string;
+  points: number;
+  condition: {
+    type: string;
+    value: number;
+  };
+  isSecret: boolean;
+  isActive: boolean;
+  totalUnlocked?: number;
+  unlockedCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTrophyRequest {
+  name: string;
+  nameEn: string;
+  nameFr: string;
+  description?: string;
+  descriptionEn?: string;
+  descriptionFr?: string;
+  category: 'SAVINGS' | 'CHALLENGE' | 'SOCIAL' | 'GENERAL';
+  rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+  icon: string;
+  points: number;
+  condition: {
+    type: string;
+    value: number;
+  };
+  isSecret?: boolean;
+}
+
+export interface UpdateTrophyRequest {
+  name?: string;
+  nameEn?: string;
+  nameFr?: string;
+  description?: string;
+  descriptionEn?: string;
+  descriptionFr?: string;
+  category?: 'SAVINGS' | 'CHALLENGE' | 'SOCIAL' | 'GENERAL';
+  rarity?: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+  icon?: string;
+  points?: number;
+  condition?: {
+    type: string;
+    value: number;
+  };
+  isSecret?: boolean;
+  isActive?: boolean;
+}
+
+export interface TrophyQueryParams {
+  page?: number;
+  limit?: number;
+  category?: 'SAVINGS' | 'CHALLENGE' | 'SOCIAL' | 'GENERAL';
+  rarity?: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+}
+
+export interface TrophiesListResponse {
+  trophies: Trophy[];
+  total: number;
+  page: number;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  nameEn: string;
+  nameFr: string;
+  description?: string;
+  type: 'RANK' | 'ACHIEVEMENT' | 'SPECIAL';
+  icon: string;
+  color: string;
+  requirement: {
+    type: string;
+    value: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBadgeRequest {
+  name: string;
+  nameEn: string;
+  nameFr: string;
+  description?: string;
+  type: 'RANK' | 'ACHIEVEMENT' | 'SPECIAL';
+  icon: string;
+  color: string;
+  requirement: {
+    type: string;
+    value: number;
+  };
+}
+
+export interface UpdateBadgeRequest {
+  name?: string;
+  nameEn?: string;
+  nameFr?: string;
+  description?: string;
+  type?: 'RANK' | 'ACHIEVEMENT' | 'SPECIAL';
+  icon?: string;
+  color?: string;
+  requirement?: {
+    type: string;
+    value: number;
+  };
+}
+
+export interface BadgeQueryParams {
+  page?: number;
+  limit?: number;
+  type?: 'RANK' | 'ACHIEVEMENT' | 'SPECIAL';
+}
+
+export interface BadgesListResponse {
+  badges: Badge[];
+  total: number;
+  page: number;
+}
+
+export interface GamificationUserData {
+  trophies: Trophy[];
+  badges: Badge[];
+  level: {
+    level: number;
+    currentXP: number;
+    totalXP: number;
+    xpToNextLevel: number;
+    rank: string;
+  };
+}
+
+export interface GamificationStats {
+  trophies: {
+    total: number;
+    totalUnlocked: number;
+    averagePoints: number;
+  };
+  badges: {
+    total: number;
+  };
+  levels: {
+    totalUsers: number;
+    averageLevel: number;
+    averageXP: number;
+    maxLevel: number;
+    maxXP: number;
+  };
+  topUsers: Array<{
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+    level: number;
+    totalXP: number;
+    trophiesCount: number;
+    badgesCount: number;
+  }>;
+}
+
+export interface GamificationLeaderboardEntry {
+  rank: number;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+  };
+  level: number;
+  totalXP: number;
+  rankName: string;
+  trophiesCount: number;
+  badgesCount: number;
+}
+
+// ==================== FINEOPAY PAYMENTS TYPES ====================
+
+export interface FineoPayPayment {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  amount: number;
+  type: 'DEPOSIT' | 'WITHDRAWAL' | 'SUBSCRIPTION' | 'CHALLENGE';
+  method: 'MOMO' | 'CARD' | 'BANK_TRANSFER';
+  status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'CANCELLED' | 'DONE' | 'SUSPECT' | 'FAILURE';
+  transactionRef: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface FineoPayPaymentQueryParams {
+  page?: number;
+  limit?: number;
+  status?: 'PENDING' | 'SUCCESS' | 'FAILED' | 'CANCELLED' | 'DONE' | 'SUSPECT' | 'FAILURE';
+  userId?: string;
+  method?: 'MOMO' | 'CARD' | 'BANK_TRANSFER';
+}
+
+export interface FineoPayPaymentsListResponse {
+  payments: FineoPayPayment[];
+  total: number;
+  page: number;
+}
+
+export interface FineoPayPaymentStats {
+  total: number;
+  success: {
+    total: number;
+    count: number;
+    average: number;
+  };
+  pending: {
+    total: number;
+    count: number;
+  };
+  failed: {
+    total: number;
+    count: number;
+  };
+  byMethod: Array<{
+    method: string;
+    total: number;
+    count: number;
+  }>;
+  byStatus: Array<{
+    status: string;
+    total: number;
+    count: number;
+  }>;
+}
+
+export interface FineoPayPaymentsByStatusParams {
+  status: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface FineoPayRevenueQuery {
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface FineoPayRevenue {
+  total: {
+    revenue: number;
+    count: number;
+  };
+  today: {
+    revenue: number;
+    count: number;
+  };
+  monthly: Array<{
+    period: string;
+    revenue: number;
+    count: number;
+  }>;
+}
+
+// ==================== SUBSCRIPTIONS TYPES ====================
+
+export interface Subscription {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  plan: 'FREE' | 'TRIAL' | 'PREMIUM' | 'SIX_MONTHS';
+  status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
+  startDate: string;
+  endDate: string;
+  autoRenew: boolean;
+  cancelledAt?: string;
+  createdAt: string;
+}
+
+export interface SubscriptionQueryParams {
+  page?: number;
+  limit?: number;
+  status?: 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
+  plan?: 'FREE' | 'TRIAL' | 'PREMIUM' | 'SIX_MONTHS';
+  userId?: string;
+}
+
+export interface SubscriptionsListResponse {
+  subscriptions: Subscription[];
+  total: number;
+  page: number;
+}
+
+export interface SubscriptionStats {
+  total: number;
+  active: number;
+  byStatus: Array<{
+    status: string;
+    count: number;
+  }>;
+  byPlan: Array<{
+    plan: string;
+    count: number;
+  }>;
+}
+
+export interface ExtendSubscriptionRequest {
+  durationInDays: number;
+}
+
+export interface SubscriptionRevenueQuery {
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface SubscriptionRevenue {
+  totalRevenue: number;
+  paymentCount: number;
+  activeSubscriptions: number;
+  averageRevenue: number;
+}
+
+// ==================== COACHING REQUESTS TYPES ====================
+
+export interface CoachingRequest {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  subject: string;
+  message: string;
+  preferredTimes?: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'ACCEPTED' | 'DECLINED' | 'COMPLETED';
+  createdAt: string;
+}
+
+export interface CoachingRequestQueryParams {
+  page?: number;
+  limit?: number;
+  status?: 'ALL' | 'PENDING' | 'IN_PROGRESS' | 'ACCEPTED' | 'DECLINED' | 'COMPLETED';
+  search?: string;
+}
+
+export interface CoachingRequestsListResponse {
+  requests: CoachingRequest[];
+  total: number;
+  page: number;
+}
+
+export interface UpdateCoachingRequestStatusRequest {
+  status: 'PENDING' | 'IN_PROGRESS' | 'ACCEPTED' | 'DECLINED' | 'COMPLETED';
 }

@@ -12,7 +12,8 @@ import {
     Plus,
     Download,
     Loader2,
-    RefreshCw
+    RefreshCw,
+    KeyRound
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,8 @@ const UserManagement = () => {
     approveUser,
     rejectUser,
     upgradeUserToPremium,
-    approveAndUpgradeToPremium
+    approveAndUpgradeToPremium,
+    regenerateUserAccess
   } = useAdminUsers();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -220,6 +222,22 @@ const UserManagement = () => {
       toast.success('Utilisateur approuvé et mis à niveau vers Premium');
     } catch (error) {
       toast.error('Erreur lors de l\'approbation et mise à niveau');
+    }
+  };
+
+  const handleRegenerateUserAccess = async (userId: string) => {
+    try {
+      await regenerateUserAccess(userId);
+      toast.success('Identifiants régénérés avec succès. Un email a été envoyé à l\'utilisateur.');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la régénération des identifiants';
+      if (errorMessage.includes('pas approuvé')) {
+        toast.error('L\'utilisateur doit être approuvé avant de régénérer les identifiants');
+      } else if (errorMessage.includes('pas d\'email')) {
+        toast.error('L\'utilisateur n\'a pas d\'email associé');
+      } else {
+        toast.error(errorMessage);
+      }
     }
   };
 
@@ -543,6 +561,14 @@ const UserManagement = () => {
                                   Approuver + Premium
                                 </DropdownMenuItem>
                               </>
+                            )}
+                            
+                            {/* Régénérer les identifiants - disponible pour les utilisateurs approuvés */}
+                            {user.approvalStatus === 'APPROVED' && user.email && (
+                              <DropdownMenuItem onClick={() => handleRegenerateUserAccess(user.id)}>
+                                <KeyRound className="w-4 h-4 mr-2" />
+                                Régénérer les identifiants
+                              </DropdownMenuItem>
                             )}
                             
                             {/* Actions premium - disponibles pour tous les utilisateurs non-premium */}

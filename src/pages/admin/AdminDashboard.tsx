@@ -152,10 +152,29 @@ const AdminDashboard = () => {
     );
   }
 
-  // Utiliser les données réelles ou les données mock en fallback
+  // Utiliser les données réelles de l'API, avec fallback sur mock si nécessaire
   const stats = dashboardStats || mockStats;
-  const userGrowthData = userStats?.userGrowth || mockChartData.map(item => ({ period: item.month, count: item.users }));
-  const revenueData = dashboardStats?.revenueGrowth || mockChartData.map(item => ({ period: item.month, amount: item.revenue }));
+  
+  // Préparer les données de croissance pour les graphiques
+  const userGrowthData = dashboardStats?.userGrowth 
+    ? dashboardStats.userGrowth.map(item => ({ 
+        date: item.date, 
+        count: item.count 
+      }))
+    : userStats?.userGrowth 
+    ? userStats.userGrowth.map(item => ({ 
+        date: item.period, 
+        count: item.count 
+      }))
+    : mockChartData.map(item => ({ 
+        date: item.month, 
+        count: item.users 
+      }));
+  
+  const revenueData = dashboardStats?.revenueGrowth || mockChartData.map(item => ({ 
+    date: item.month, 
+    amount: item.revenue 
+  }));
 
   return (
     <motion.div
@@ -173,9 +192,10 @@ const AdminDashboard = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Badge className="bg-green-100 text-green-800">
+          <Badge className={`${dashboardStats?.systemHealth?.status === 'healthy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
             <Activity className="w-4 h-4 mr-1" />
-            Système opérationnel
+            {dashboardStats?.systemHealth?.status === 'healthy' ? 'Système opérationnel' : 'Système en alerte'}
+            {dashboardStats?.systemHealth?.database && ` • DB: ${dashboardStats.systemHealth.database}`}
           </Badge>
           <Button variant="outline" size="sm">
             <Settings className="w-4 h-4 mr-2" />
@@ -196,11 +216,18 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{mockStats.totalUsers.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-blue-600">{(stats.totalUsers || 0).toLocaleString()}</div>
             <div className="flex items-center mt-1">
               <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-              <span className="text-xs text-green-500">+{mockStats.monthlyGrowth}% ce mois</span>
+              <span className="text-xs text-green-500">
+                +{(stats.newUsersThisMonth || 0)} ce mois
+              </span>
             </div>
+            {stats.totalAdmins && (
+              <div className="text-xs text-gray-500 mt-1">
+                {stats.totalAdmins} admins, {stats.totalGuests || 0} invités
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -214,47 +241,90 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{mockStats.premiumUsers}</div>
+            <div className="text-2xl font-bold text-yellow-600">{(stats.premiumUsers || 0).toLocaleString()}</div>
             <div className="flex items-center mt-1">
               <span className="text-xs text-gray-500">
-                {((mockStats.premiumUsers / mockStats.totalUsers) * 100).toFixed(1)}% de conversion
+                {stats.totalUsers ? (((stats.premiumUsers || 0) / stats.totalUsers) * 100).toFixed(1) : 0}% de conversion
               </span>
             </div>
+            {stats.verifiedUsers && (
+              <div className="text-xs text-gray-500 mt-1">
+                {stats.verifiedUsers} vérifiés
+              </div>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Revenus mensuels
+              {stats.totalRevenue !== undefined ? 'Revenus mensuels' : 'Nouveaux utilisateurs'}
             </CardTitle>
             <div className="p-2 bg-green-100 rounded-lg">
+              {stats.totalRevenue !== undefined ? (
               <DollarSign className="h-4 w-4 text-green-600" />
+              ) : (
+                <Users className="h-4 w-4 text-green-600" />
+              )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{mockStats.totalRevenue.toLocaleString()}€</div>
+            {stats.totalRevenue !== undefined ? (
+              <>
+                <div className="text-2xl font-bold text-green-600">{(stats.totalRevenue || 0).toLocaleString()}€</div>
             <div className="flex items-center mt-1">
               <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
               <span className="text-xs text-green-500">+15% vs mois dernier</span>
             </div>
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-green-600">+{(stats.newUsersToday || 0)}</div>
+                <div className="flex items-center mt-1">
+                  <span className="text-xs text-gray-500">
+                    Aujourd'hui • {stats.newUsersThisWeek || 0} cette semaine
+                  </span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Approbations en attente
+              {stats.pendingUsers !== undefined ? 'Approbations en attente' : 'Système'}
             </CardTitle>
             <div className="p-2 bg-red-100 rounded-lg">
+              {stats.pendingUsers !== undefined ? (
               <AlertCircle className="h-4 w-4 text-red-600" />
+              ) : (
+                <Activity className="h-4 w-4 text-red-600" />
+              )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{mockStats.pendingApprovals}</div>
+            {stats.pendingUsers !== undefined ? (
+              <>
+                <div className="text-2xl font-bold text-red-600">{(stats.pendingUsers || 0).toLocaleString()}</div>
             <div className="flex items-center mt-1">
               <span className="text-xs text-red-500">Demandes à traiter</span>
             </div>
+              </>
+            ) : (
+              <>
+                <div className={`text-2xl font-bold ${stats.systemHealth?.status === 'healthy' ? 'text-green-600' : 'text-red-600'}`}>
+                  {stats.systemHealth?.status === 'healthy' ? '✓ Opérationnel' : '⚠ Problème'}
+                </div>
+                {stats.systemHealth && (
+                  <div className="flex items-center mt-1">
+                    <span className="text-xs text-gray-500">
+                      Uptime: {Math.floor((stats.systemHealth.uptime || 0) / 3600)}h
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -282,13 +352,19 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={mockChartData}>
+                    <LineChart data={userGrowthData.length > 0 ? userGrowthData : mockChartData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
+                      <XAxis dataKey={userGrowthData.length > 0 ? "date" : "month"} />
                       <YAxis />
                       <Tooltip />
+                      {userGrowthData.length > 0 ? (
+                        <Line type="monotone" dataKey="count" stroke="#3B82F6" strokeWidth={2} name="Utilisateurs" />
+                      ) : (
+                        <>
                       <Line type="monotone" dataKey="users" stroke="#3B82F6" strokeWidth={2} name="Utilisateurs" />
                       <Line type="monotone" dataKey="premium" stroke="#F59E0B" strokeWidth={2} name="Premium" />
+                        </>
+                      )}
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -327,21 +403,43 @@ const AdminDashboard = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{mockStats.activeUsers}</div>
+                      <div className="text-2xl font-bold text-blue-600">{(stats.activeUsers || 0).toLocaleString()}</div>
                       <p className="text-sm text-blue-800">Utilisateurs actifs</p>
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{mockStats.conversionRate}%</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {stats.totalUsers && stats.premiumUsers 
+                          ? (((stats.premiumUsers / stats.totalUsers) * 100).toFixed(1))
+                          : '0'}%
+                      </div>
                       <p className="text-sm text-green-800">Taux de conversion</p>
                     </div>
                   </div>
                   
+                  {stats.verifiedUsers !== undefined && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-4 bg-purple-50 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">{(stats.verifiedUsers || 0).toLocaleString()}</div>
+                        <p className="text-sm text-purple-800">Utilisateurs vérifiés</p>
+                      </div>
+                      <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                        <div className="text-2xl font-bold text-yellow-600">{(stats.newUsersToday || 0).toLocaleString()}</div>
+                        <p className="text-sm text-yellow-800">Nouveaux aujourd'hui</p>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span>Utilisateurs Premium</span>
-                      <span>{mockStats.premiumUsers} / {mockStats.totalUsers}</span>
+                      <span>{(stats.premiumUsers || 0).toLocaleString()} / {(stats.totalUsers || 0).toLocaleString()}</span>
                     </div>
-                    <Progress value={(mockStats.premiumUsers / mockStats.totalUsers) * 100} className="h-2" />
+                    <Progress 
+                      value={stats.totalUsers && stats.premiumUsers 
+                        ? ((stats.premiumUsers / stats.totalUsers) * 100) 
+                        : 0} 
+                      className="h-2" 
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -356,7 +454,7 @@ const AdminDashboard = () => {
                     <UserCheck className="w-4 h-4 mr-2" />
                     Approuver les inscriptions
                     <Badge variant="secondary" className="ml-auto">
-                      {mockStats.pendingApprovals}
+                      {(stats.pendingUsers || 0).toLocaleString()}
                     </Badge>
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
@@ -399,7 +497,7 @@ const AdminDashboard = () => {
                     <div className="border-t pt-4">
                       <div className="flex justify-between items-center font-bold">
                         <span>Total</span>
-                        <span>{mockStats.totalRevenue.toLocaleString()}€</span>
+                        <span>{(stats.totalRevenue || stats.monthlyRevenue || 0).toLocaleString()}€</span>
                       </div>
                     </div>
                   </div>
@@ -411,18 +509,30 @@ const AdminDashboard = () => {
                   <CardTitle>Métriques de performance</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {(stats.totalRevenue || stats.monthlyRevenue) && stats.totalUsers && (
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Revenu par utilisateur (ARPU)</span>
-                    <span className="font-medium">{(mockStats.totalRevenue / mockStats.totalUsers).toFixed(2)}€</span>
+                      <span className="font-medium">
+                        {((stats.totalRevenue || stats.monthlyRevenue || 0) / stats.totalUsers).toFixed(2)}€
+                      </span>
                   </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Taux de rétention</span>
                     <span className="font-medium">84%</span>
                   </div>
+                  {stats.newUsersThisMonth && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Nouveaux utilisateurs ce mois</span>
+                      <span className="font-medium">+{stats.newUsersThisMonth}</span>
+                    </div>
+                  )}
+                  {stats.newUsersThisWeek && (
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Temps de session moyen</span>
-                    <span className="font-medium">{mockStats.avgSessionTime}</span>
+                      <span className="text-sm text-gray-600">Nouveaux cette semaine</span>
+                      <span className="font-medium">+{stats.newUsersThisWeek}</span>
                   </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Taux de désabonnement</span>
                     <span className="font-medium">3.2%</span>
@@ -509,7 +619,7 @@ const AdminDashboard = () => {
                   </p>
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-500">
-                      {mockStats.totalUsers} utilisateurs
+                      {(stats.totalUsers || 0).toLocaleString()} utilisateurs
                     </div>
                     <Button 
                       size="sm" 
@@ -537,7 +647,7 @@ const AdminDashboard = () => {
                   </p>
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-500">
-                      {mockStats.totalRevenue}€ de revenus
+                      {(stats.totalRevenue || stats.monthlyRevenue || 0).toLocaleString()}€ de revenus
                     </div>
                     <Button 
                       size="sm" 
